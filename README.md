@@ -64,3 +64,14 @@ store->FlushPendingSends(server_id);
 store->PollSQ(server_id);
 store->PollRQ(server_id);
 ```
+# Dependencies
+fmt https://fmt.dev/latest/index.html
+
+gflags https://github.com/gflags/gflags
+
+# Build
+```
+cmake .
+make
+```
+
