@@ -2,7 +2,7 @@
 A C++ library for RDMA. It is built on top of https://github.com/wxdwfc/rlib. 
 
 # Interface
-RDMA RC: https://github.com/HaoyuHuang/RDMALib/blob/master/nova/nova_rdma_rc_store.h
+RDMA RC: https://github.com/HaoyuHuang/RDMALib/blob/master/nova/nova_rdma_rc_broker.h
 
 Message callback: https://github.com/HaoyuHuang/RDMALib/blob/master/nova/nova_msg_callback.h
 
