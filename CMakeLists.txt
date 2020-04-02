@@ -13,8 +13,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 add_library(rdmalib "" )
 target_sources(rdmalib
         PRIVATE
-        nova/city_hash.h
-        nova/city_hash.cpp
         nova/common.hpp
         nova/logging.hpp
         nova/mr.hpp
@@ -30,9 +28,9 @@ target_sources(rdmalib
         nova/nova_common.cpp
         nova/nova_common.h
         nova/nova_msg_callback.h
-        nova/nova_rdma_rc_store.cpp
-        nova/nova_rdma_rc_store.h
-        nova/nova_rdma_store.h
+        nova/nova_rdma_rc_broker.cpp
+        nova/nova_rdma_rc_broker.h
+        nova/nova_rdma_broker.h
         nova/nova_mem_manager.cpp
         nova/nova_mem_manager.h
         )

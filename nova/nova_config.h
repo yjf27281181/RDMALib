@@ -31,7 +31,6 @@ namespace nova {
 
         int nrdma_threads;
         int rdma_port;
-        int rdma_pq_batch_size;
         int rdma_max_num_sends;
         int rdma_doorbell_batch_size;
 

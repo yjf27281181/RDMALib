@@ -8,7 +8,7 @@
 #include "rdma_ctrl.hpp"
 #include "nova_common.h"
 #include "nova_config.h"
-#include "nova_rdma_rc_store.h"
+#include "nova_rdma_rc_broker.h"
 #include "nova_mem_manager.h"
 
 #include <stdlib.h>
@@ -40,6 +40,51 @@ DEFINE_uint64(rdma_doorbell_batch_size, 0, "The doorbell batch size.");
 DEFINE_uint32(nrdma_workers, 0,
               "Number of rdma threads.");
 
+class ExampleRDMAThread {
+public:
+    void Start();
+
+    RdmaCtrl *ctrl_;
+    std::vector<QPEndPoint> endpoints_;
+    char *rdma_backing_mem_;
+    char *circular_buffer_;
+};
+
+void ExampleRDMAThread::Start() {
+// A thread i at server j connects to thread i of all other servers.
+    NovaRDMARCBroker *broker = new NovaRDMARCBroker(circular_buffer_, 0,
+                                                    endpoints_,
+                                                    FLAGS_rdma_max_num_sends,
+                                                    FLAGS_rdma_max_msg_size,
+                                                    FLAGS_rdma_doorbell_batch_size,
+                                                    FLAGS_server_id,
+                                                    rdma_backing_mem_,
+                                                    FLAGS_mem_pool_size_gb *
+                                                    1024 *
+                                                    1024 * 1024,
+                                                    FLAGS_rdma_port,
+                                                    new DummyNovaMsgCallback);
+    broker->Init(ctrl_);
+
+    if (FLAGS_server_id == 0) {
+        int server_id = 1;
+        char *sendbuf = broker->GetSendBuf(server_id);
+        // Write a request into the buf.
+        sendbuf[0] = 'a';
+        uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
+        RDMA_LOG(INFO) << fmt::format("send one byte 'a' wr:{} imm:1", wr_id);
+        broker->FlushPendingSends(server_id);
+        broker->PollSQ(server_id);
+        broker->PollRQ(server_id);
+    }
+
+    while (true) {
+        broker->PollRQ();
+        broker->PollSQ();
+    }
+}
+
+
 int main(int argc, char *argv[]) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
     if (FLAGS_server_id == -1) {
@@ -52,10 +97,20 @@ int main(int argc, char *argv[]) {
                flag.current_value.c_str());
     }
 
+
     char *rdma_backing_mem = (char *) malloc(
             FLAGS_mem_pool_size_gb * 1024 * 1024 * 1024);
     memset(rdma_backing_mem, 0, FLAGS_mem_pool_size_gb * 1024 * 1024 * 1024);
     std::vector<Host> hosts = convert_hosts(FLAGS_servers);
+
+    NovaConfig::config = new NovaConfig;
+    NovaConfig::config->nrdma_threads = FLAGS_nrdma_workers;
+    NovaConfig::config->my_server_id = FLAGS_server_id;
+    NovaConfig::config->servers = hosts;
+    NovaConfig::config->rdma_port = FLAGS_rdma_port;
+    NovaConfig::config->rdma_doorbell_batch_size = FLAGS_rdma_doorbell_batch_size;
+    NovaConfig::config->max_msg_size = FLAGS_rdma_max_msg_size;
+    NovaConfig::config->rdma_max_num_sends = FLAGS_rdma_max_num_sends;
 
     RdmaCtrl *ctrl = new RdmaCtrl(FLAGS_server_id, FLAGS_rdma_port);
     std::vector<QPEndPoint> endpoints;
@@ -71,7 +126,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Each QP contains nrdma_buf_unit() memory for the circular buffer.
-    // An RDMA store uses nrdma_buf_unit() * number of servers memory for its circular buffers.
+    // An RDMA broker uses nrdma_buf_unit() * number of servers memory for its circular buffers.
     // Each server contains nrdma_buf_unit() * number of servers * number of rdma threads for the circular buffers.
 
     // We register all memory to the RNIC.
@@ -88,24 +143,13 @@ int main(int argc, char *argv[]) {
     // Do sth with the buf.
     mem_manager->FreeItem(0, buf, scid);
 
-    // A thread i at server j connects to thread i of all other servers.
-    NovaRDMARCStore *store = new NovaRDMARCStore(rdma_backing_mem, 0, endpoints,
-                                                 FLAGS_rdma_max_num_sends,
-                                                 FLAGS_rdma_max_msg_size,
-                                                 FLAGS_rdma_doorbell_batch_size,
-                                                 FLAGS_server_id,
-                                                 rdma_backing_mem,
-                                                 FLAGS_mem_pool_size_gb * 1024 *
-                                                 1024 * 1024, FLAGS_rdma_port,
-                                                 new DummyNovaMsgCallback);
-    store->Init(ctrl);
-    int server_id = 1;
-    char *sendbuf = store->GetSendBuf(server_id);
-    // Write a request into the buf.
-    buf[0] = 'a';
-    uint64_t wr_id = store->PostSend(sendbuf, 1, server_id, 0);
-    store->FlushPendingSends(server_id);
-    store->PollSQ(server_id);
-    store->PollRQ(server_id);
+
+    ExampleRDMAThread *example = new ExampleRDMAThread;
+    example->circular_buffer_ = rdma_backing_mem;
+    example->ctrl_ = ctrl;
+    example->endpoints_ = endpoints;
+    example->rdma_backing_mem_ = rdma_backing_mem;
+    std::thread t(&ExampleRDMAThread::Start, example);
+    t.join();
     return 0;
 }

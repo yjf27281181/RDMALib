@@ -4,15 +4,15 @@
 // Copyright (c) 2019 University of Southern California. All rights reserved.
 //
 
-#ifndef RLIB_NOVA_RDMA_STORE_H
-#define RLIB_NOVA_RDMA_STORE_H
+#ifndef RLIB_NOVA_RDMA_BROKER_H
+#define RLIB_NOVA_RDMA_BROKER_H
 
 #include "rdma_ctrl.hpp"
 
 namespace nova {
     using namespace rdmaio;
 
-    class NovaRDMAStore {
+    class NovaRDMABroker {
     public:
         virtual void Init(RdmaCtrl *rdma_ctrl) = 0;
 
@@ -49,11 +49,11 @@ namespace nova {
 
         virtual char *GetSendBuf(int server_id) = 0;
 
-        virtual uint32_t store_id() = 0;
+        virtual uint32_t thread_id() = 0;
     };
 
 
-    class NovaRDMANoopStore : public NovaRDMAStore {
+    class NovaRDMANoopStore : public NovaRDMABroker {
         void Init(RdmaCtrl *rdma_ctrl) {};
 
         uint64_t PostRead(char *localbuf, uint32_t size, int server_id,
@@ -87,7 +87,7 @@ namespace nova {
 
         char *GetSendBuf(int server_id) { return NULL; }
 
-        uint32_t store_id() { return 0; }
+        uint32_t thread_id() { return 0; }
     };
 }
-#endif //RLIB_NOVA_RDMA_STORE_H
+#endif //RLIB_NOVA_RDMA_BROKER_H
