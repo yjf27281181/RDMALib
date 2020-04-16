@@ -7,8 +7,17 @@ project(rdmalib VERSION 1.22.0 LANGUAGES C CXX)
 add_definitions(-std=c++11)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_COMPILER /usr/bin/g++)
+# set(CMAKE_CXX_COMPILER /usr/bin/g++)
+set(CMAKE_CXX_COMPILER /usr/bin/c++)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+# CMAKE_CXX_COMPILER= /usr/bin/c++
+
+# mianlusc: https://fmt.dev/latest/usage.html#building
+add_subdirectory(fmt)
+
+# mianlusc: https://gflags.github.io/gflags/#cmake 
+add_subdirectory(gflags)
+
 
 add_library(rdmalib "" )
 target_sources(rdmalib
@@ -40,8 +49,6 @@ target_link_libraries(rdmalib Threads::Threads -lpthread)
 target_link_libraries(rdmalib ibverbs fmt)
 
 add_executable(example_main "nova/example_main.cpp")
-target_link_libraries(example_main -lgflags rdmalib)
-
-# mianlusc: https://fmt.dev/latest/usage.html#building
-add_subdirectory(fmt)
-
+target_link_libraries(example_main gflags::gflags)
+# target_link_libraries(example_main -lgflags rdmalib)
+target_link_libraries(example_main rdmalib)
