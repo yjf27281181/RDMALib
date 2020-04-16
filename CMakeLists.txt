@@ -41,3 +41,7 @@ target_link_libraries(rdmalib ibverbs fmt)
 
 add_executable(example_main "nova/example_main.cpp")
 target_link_libraries(example_main -lgflags rdmalib)
+
+# mianlusc: https://fmt.dev/latest/usage.html#building
+add_subdirectory(fmt)
+
