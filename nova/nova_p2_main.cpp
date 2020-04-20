@@ -17,6 +17,8 @@
 #include <csignal>
 #include <gflags/gflags.h>
 
+#include <sstream> // ML: for saving memory address (pointed-to) as a string, so it can be send over RDMA
+
 using namespace std;
 using namespace rdmaio;
 using namespace nova;
@@ -70,7 +72,7 @@ ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
 void ExampleRDMAThread::Start() {
 // A thread i at server j connects to thread i of all other servers.
     // ML: for testing
-    assert(this->nmm == NULL);
+    assert(this->nmm != NULL);
     NovaRDMARCBroker *broker = new NovaRDMARCBroker(circular_buffer_, 0,
                                                     endpoints_,
                                                     FLAGS_rdma_max_num_sends,
@@ -87,7 +89,29 @@ void ExampleRDMAThread::Start() {
 
     if (FLAGS_server_id == 0) { // ML: if we're node-0 (then our peer is node-1)
         // step 1- register a memory block and store something there
+        uint32_t scid = nmm->slabclassid(0, 40);
+        char *bufStorage = mem_manager->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
+        // Do sth with the buf.
+        bufStorage = "|- rdma read target data -|\0";
+        // have another node read from here
+        char *bufMsg = malloc(64 * sizeof(char)); // TODO remember to free!
 
+        // use ostringstream for storing memory address as a string, then
+        // converted to char array pointed at by char*, then send bufMsg over
+        // the wire
+        ostringstream oss;
+        oss << (void*)bufStorage; // oss should hold the ADDRESS of bufStorage
+        bufMsg = strdup(oss.str().c_str());
+        cout << "bufMsg contains value: " << bufMsg << endl;
+
+        // TODO now RDMASend() using bufMsg as the outgoing message buffer
+
+        // TODO after RDMASend(), maybe free bufMsg?
+
+        // TODO ideally have the other node notify upon finish reading
+
+        // TODO finally free bufStorage
+        // mem_manager->FreeItem(0, buf, scid);
 
         int server_id = 1;
         char *sendbuf = broker->GetSendBuf(server_id);
