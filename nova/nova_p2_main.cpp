@@ -103,7 +103,9 @@ void ExampleRDMAThread::Start() {
         oss << (void*)bufStorage; // oss should hold the ADDRESS of bufStorage
         bufMsg = strdup(oss.str().c_str());
         // cout << "bufMsg contains value: " << bufMsg << endl;
-	RDMA_LOG(INFO) << fmt::format("bufMsg contains value: {}", bufMsg);
+        RDMA_LOG(INFO) << fmt::format("bufMsg contains value: {}", bufMsg);
+        // result of line above:
+        // Mon Apr 20 04:36:16 2020, [nova_p2_main.cpp:106] bufMsg contains value: 0x47f8c8
 
         // TODO now RDMASend() using bufMsg as the outgoing message buffer
 
@@ -118,8 +120,11 @@ void ExampleRDMAThread::Start() {
         char *sendbuf = broker->GetSendBuf(server_id);
         // Write a request into the buf.
         sendbuf[0] = 'a';
+        *sendbuf = "READFROM";
+        *(sendbuf + 8) = *bufMsg;
         uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
-        RDMA_LOG(INFO) << fmt::format("send one byte 'a' wr:{} imm:1", wr_id);
+        // RDMA_LOG(INFO) << fmt::format("send one byte 'a' wr:{} imm:1", wr_id);
+        RDMA_LOG(INFO) << fmt::format("send many bytes wr:{} imm:1", wr_id);
         broker->FlushPendingSends(server_id);
         broker->PollSQ(server_id);
         broker->PollRQ(server_id);
