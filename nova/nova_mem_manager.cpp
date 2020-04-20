@@ -169,6 +169,23 @@ namespace nova {
         slab_class_mutex_[scid].unlock();
     }
 
+    // ML:
+    //
+    // "buf" is where to mount the entire memory pool that is managed by this
+    // "NovaMemManager". It is up to the caller (i.e. int main()) to figure out
+    // exactly where to mount this entire memory pool. In Haoyu's example, it
+    // is mounted right after the entire block of memory taken up by
+    // "rdma_backing_mem", which is "malloc()"ed at run time.
+    //
+    // "num_mem_partitions" is total # of memory partitions managed by
+    // this "NovaMemManager". "mem_pool_size_gb" is total amount of memory
+    // managed by this "NovaMemManager", passed in as a command-line argument
+    // upon run time.
+    //
+    // Therefore, total "mem_pool_size_gb" memory is partitioned into
+    // "num_mem_partitions" number of partitions.
+    //
+    // Finally, "slab_size_mb" is simply passed onto "NovaPartitionMemManager".
     NovaMemManager::NovaMemManager(char *buf, uint32_t num_mem_partitions,
                                    uint64_t mem_pool_size_gb,
                                    uint64_t slab_size_mb) {

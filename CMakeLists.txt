@@ -15,7 +15,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 # mianlusc: https://fmt.dev/latest/usage.html#building
 add_subdirectory(fmt)
 
-# mianlusc: https://gflags.github.io/gflags/#cmake 
+# mianlusc: https://gflags.github.io/gflags/#cmake
 add_subdirectory(gflags)
 
 
@@ -48,7 +48,8 @@ find_package(Threads REQUIRED)
 target_link_libraries(rdmalib Threads::Threads -lpthread)
 target_link_libraries(rdmalib ibverbs fmt)
 
-add_executable(example_main "nova/example_main.cpp")
-target_link_libraries(example_main gflags::gflags)
+# add_executable(example_main "nova/example_main.cpp")
+add_executable(nova_p2_main "nova/nova_p2_main.cpp")
+target_link_libraries(nova_p2_main gflags::gflags)
 # target_link_libraries(example_main -lgflags rdmalib)
-target_link_libraries(example_main rdmalib)
+target_link_libraries(nova_p2_main rdmalib)
