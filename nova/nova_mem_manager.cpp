@@ -95,6 +95,7 @@ namespace nova {
         }
     }
 
+    // ML: seems like finding the appropriate "class of slab" for a "size" item
     uint32_t NovaPartitionedMemManager::slabclassid(uint64_t size) {
         RDMA_ASSERT(size > 0 && size <= slab_size_mb_ * 1024 * 1024)
             << fmt::format("alloc size:{} max size:{}", size,
@@ -112,7 +113,7 @@ namespace nova {
         Slab *slab = nullptr;
 
         slab_class_mutex_[scid].lock();
-        free_item = slab_classes_[scid].AllocItem();
+        free_item = slab_classes_[scid].AllocItem(); // ML: items are of fixed size, set upon initialization!
         if (free_item != nullptr) {
             slab_class_mutex_[scid].unlock();
             return free_item;

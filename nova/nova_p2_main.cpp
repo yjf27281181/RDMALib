@@ -38,7 +38,10 @@ DEFINE_uint32(nrdma_workers, 0,
               "Number of rdma threads.");
 
 class ExampleRDMAThread {
+private:
+    NovaMemManager *nmm;
 public:
+    ExampleRDMAThread(NovaMemManager*);
     void Start();
 
     RdmaCtrl *ctrl_;
@@ -46,6 +49,11 @@ public:
     char *rdma_backing_mem_;
     char *circular_buffer_;
 };
+
+// ML: added a meaningful constructor
+ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
+    this.nmm = mem_manager;
+}
 
 // ML: This is what i should mainly be editing. Let's dictate that node-0 wakes
 // up to write some naive data in a known location (or that location can be
@@ -61,6 +69,8 @@ public:
 // node-0 to free that memory.
 void ExampleRDMAThread::Start() {
 // A thread i at server j connects to thread i of all other servers.
+    // ML: for testing
+    assert(this.nmm == NULL);
     NovaRDMARCBroker *broker = new NovaRDMARCBroker(circular_buffer_, 0,
                                                     endpoints_,
                                                     FLAGS_rdma_max_num_sends,
@@ -154,16 +164,25 @@ int main(int argc, char *argv[]) {
                                                      FLAGS_mem_pool_size_gb,
                                                      slab_mb);
     uint32_t scid = mem_manager->slabclassid(0, 40);
-    char *buf = mem_manager->ItemAlloc(0, scid);
+    char *buf = mem_manager->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     // Do sth with the buf.
+    *buf = "lmao this should fit";
+    // have another node read from here
+    // TODO
+
+    // ideally have the other node notify upon finish reading
+    // TODO
+
+    // finally free it
     mem_manager->FreeItem(0, buf, scid);
 
     // ML: look at above, a design decision is needed here. Do I instantiate
     // NovaMemManager here, or should I move it into the thread class? Thread
     // need to be able to allocate multiple buffers as it sees fit. Would it
     // still work if NovaMemManager instantiation is moved into thread class?
-
-    ExampleRDMAThread *example = new ExampleRDMAThread;
+    // ANSWER: just pass-by-reference a NovaMemManager instance to the thread
+    // class!
+    ExampleRDMAThread *example = new ExampleRDMAThread(*mem_manager); // with pass-by-pointer
     example->circular_buffer_ = rdma_backing_mem;
     example->ctrl_ = ctrl;
     example->endpoints_ = endpoints;
