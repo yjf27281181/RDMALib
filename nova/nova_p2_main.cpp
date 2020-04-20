@@ -52,7 +52,7 @@ public:
 
 // ML: added a meaningful constructor
 ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
-    this.nmm = mem_manager;
+    this->nmm = mem_manager;
 }
 
 // ML: This is what i should mainly be editing. Let's dictate that node-0 wakes
@@ -70,7 +70,7 @@ ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
 void ExampleRDMAThread::Start() {
 // A thread i at server j connects to thread i of all other servers.
     // ML: for testing
-    assert(this.nmm == NULL);
+    assert(this->nmm == NULL);
     NovaRDMARCBroker *broker = new NovaRDMARCBroker(circular_buffer_, 0,
                                                     endpoints_,
                                                     FLAGS_rdma_max_num_sends,
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     uint32_t scid = mem_manager->slabclassid(0, 40);
     char *buf = mem_manager->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     // Do sth with the buf.
-    *buf = "lmao this should fit";
+    buf = "lmao this should fit\0";
     // have another node read from here
     // TODO
 
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     // still work if NovaMemManager instantiation is moved into thread class?
     // ANSWER: just pass-by-reference a NovaMemManager instance to the thread
     // class!
-    ExampleRDMAThread *example = new ExampleRDMAThread(*mem_manager); // with pass-by-pointer
+    ExampleRDMAThread *example = new ExampleRDMAThread(mem_manager); // with pass-by-pointer
     example->circular_buffer_ = rdma_backing_mem;
     example->ctrl_ = ctrl;
     example->endpoints_ = endpoints;
