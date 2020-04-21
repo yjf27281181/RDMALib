@@ -108,7 +108,10 @@ void ExampleRDMAThread::Start() {
         bufStorage = "|- rdma read target data -|\0";
         // Step 3- Figure out how to send bufStorage (the address it's pointing
         // at) as a piece of information over RDMA Send
-        char *bufMsg = (char*)malloc(64 * sizeof(char)); // TODO remember to free!
+
+        // char *bufMsg = (char*)malloc(64 * sizeof(char)); // TODO remember to free!
+        // Verdict: this line above is causing the error! Must use ItemAlloc()
+        char *bufMsg = nmm->ItemAlloc(0, scid); // reuse scid for a 40-byte-or-less message
 
         // use ostringstream for storing memory address as a string, then
         // converted to char array pointed at by char*, then send bufMsg over
