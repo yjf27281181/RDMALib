@@ -172,6 +172,7 @@ void ExampleRDMAThread::Start() {
 // let's first test a few things out. For instance, a longer string than 'a'.
 void ExampleRDMAThread::Start() {
 // A thread i at server j connects to thread i of all other servers.
+    P2MsgCallback *p2mc = new P2MsgCallback;
     NovaRDMARCBroker *broker = new NovaRDMARCBroker(circular_buffer_, 0,
                                                     endpoints_,
                                                     FLAGS_rdma_max_num_sends,
@@ -183,7 +184,7 @@ void ExampleRDMAThread::Start() {
                                                     1024 *
                                                     1024 * 1024,
                                                     FLAGS_rdma_port,
-                                                    new P2MsgCallback);
+                                                    p2mc);
     broker->Init(ctrl_);
 
     if (FLAGS_server_id == 0) {
