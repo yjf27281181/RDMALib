@@ -109,9 +109,9 @@ void ExampleRDMAThread::Start() {
         // Step 3- Figure out how to send bufStorage (the address it's pointing
         // at) as a piece of information over RDMA Send
 
-        // char *bufMsg = (char*)malloc(64 * sizeof(char)); // TODO remember to free!
+        char *bufMsg = (char*)malloc(64 * sizeof(char)); // TODO remember to free!
         // Verdict: this line above is causing the error! Must use ItemAlloc()
-        char *bufMsg = nmm->ItemAlloc(0, scid); // reuse scid for a 40-byte-or-less message
+        // char *bufMsg = nmm->ItemAlloc(0, scid); // reuse scid for a 40-byte-or-less message
 
         // use ostringstream for storing memory address as a string, then
         // converted to char array pointed at by char*, then send bufMsg over
@@ -140,7 +140,7 @@ void ExampleRDMAThread::Start() {
         // Write a request into the buf.
         // sendbuf[0] = bufMsg[0];
         // sendbuf[1] = bufMsg[1]; // this seems to work fine
-        sendbuf = "READFROM";
+        sendbuf = "placeholder";
         // *(sendbuf + 8) = *bufMsg;
         uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
         // RDMA_LOG(INFO) << fmt::format("send one byte 'a' wr:{} imm:1", wr_id);
