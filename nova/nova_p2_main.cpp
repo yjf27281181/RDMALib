@@ -55,7 +55,8 @@ public:
         RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf[0]:{} [1]:{} [2]:{} [3]:{} [4]:{} [5]:{} imm:{}",
                                       ibv_wc_opcode_str(type), wr_id,
                                       remote_server_id, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], imm_data);
-        if (type == IBV_WC_RECV) {
+        // if (type == IBV_WC_RECV) {
+        if (true) {
             string recv_str(buf); // ML: let's hope this works
             this->recv_history.push_back(recv_str);
         }
