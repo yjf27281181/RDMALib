@@ -17,6 +17,7 @@ namespace nova {
         return server_qp_idx_map[server_id];
     }
 
+    // ML: char *buf is circular_buffer_ from main.cpp
     NovaRDMARCBroker::NovaRDMARCBroker(char *buf, int thread_id,
                                      const std::vector<nova::QPEndPoint> &end_points,
                                      uint32_t max_num_sends,
@@ -245,6 +246,10 @@ namespace nova {
         return wr_id;
     }
 
+    // ML: PostRead() is "initiating an action" to "read via RDMA" from a remote
+    // node. This is the second step in the server-side redirection workflow.
+    // Here, simply invoking PostRDMASEND() generic function, and indicate that
+    // we're issuing a "IBV_WR_RDMA_READ" action.
     uint64_t
     NovaRDMARCBroker::PostRead(char *localbuf, uint32_t size, int server_id,
                               uint64_t local_offset,
@@ -350,6 +355,9 @@ namespace nova {
         return size;
     }
 
+    // ML: could this be the "first step in server-side redirection", i.e. have
+    // P2_b receive P2_a's memory (addr, len), that I'm looking for?
+    // TODO
     void NovaRDMARCBroker::PostRecv(int server_id, int recv_buf_index) {
         uint32_t qp_idx = to_qp_idx(server_id);
         char *local_buf =

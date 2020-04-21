@@ -39,6 +39,19 @@ DEFINE_uint64(rdma_doorbell_batch_size, 0, "The doorbell batch size.");
 DEFINE_uint32(nrdma_workers, 0,
               "Number of rdma threads.");
 
+// ML: first step is to implement NovaMsgCallback interface
+class P2MsgCallback : public NovaMsgCallback {
+public:
+    bool
+    ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
+                  char *buf, uint32_t imm_data) override {
+        RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:{} imm:{}",
+                                      ibv_wc_opcode_str(type), wr_id,
+                                      remote_server_id, buf[0], imm_data);
+        return true;
+    }
+};
+
 class ExampleRDMAThread {
 private:
     NovaMemManager *nmm;
@@ -84,16 +97,17 @@ void ExampleRDMAThread::Start() {
                                                     1024 *
                                                     1024 * 1024,
                                                     FLAGS_rdma_port,
-                                                    new DummyNovaMsgCallback);
+                                                    new P2MsgCallback);
     broker->Init(ctrl_);
 
     if (FLAGS_server_id == 0) { // ML: if we're node-0 (then our peer is node-1)
-        // step 1- register a memory block and store something there
+        // Step 1- Register a memory block with NovaMemManager
         uint32_t scid = nmm->slabclassid(0, 40);
         char *bufStorage = nmm->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
-        // Do sth with the buf.
+        // Step 2- Store something in the buf
         bufStorage = "|- rdma read target data -|\0";
-        // have another node read from here
+        // Step 3- Figure out how to send bufStorage (the address it's pointing
+        // at) as a piece of information over RDMA Send
         char *bufMsg = (char*)malloc(64 * sizeof(char)); // TODO remember to free!
 
         // use ostringstream for storing memory address as a string, then
@@ -133,9 +147,10 @@ void ExampleRDMAThread::Start() {
     }
     else {
         // TODO if we're node-1
-        int server_id = 0; // the peer we're working with
-        broker->PollSQ(server_id);
-        broker->PollRQ(server_id);
+        // int server_id = 0; // the peer we're working with
+        // broker->PollSQ(server_id);
+        // broker->PollRQ(server_id);
+        // ML: commented out since example_main doesn't have this; add later
     }
 
     while (true) {
@@ -218,7 +233,7 @@ int main(int argc, char *argv[]) {
     // ANSWER: just pass-by-reference a NovaMemManager instance to the thread
     // class!
     ExampleRDMAThread *example = new ExampleRDMAThread(mem_manager); // with pass-by-pointer
-    example->circular_buffer_ = rdma_backing_mem;
+    example->circular_buffer_ = rdma_backing_mem; // ML: this is simply a char*, and it's meaningful-ness is interpreted at ExampleRDMAThread -> initializing NovaRDMARCBroker
     example->ctrl_ = ctrl;
     example->endpoints_ = endpoints;
     example->rdma_backing_mem_ = rdma_backing_mem;
