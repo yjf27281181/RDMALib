@@ -241,7 +241,7 @@ void ExampleRDMAThread::Start() {
 
     else { // should be node-1 executing this block
         if (p2mc->recv_history.size() != 0) {
-            RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history first element is \"{}\"", recv_history[0]);
+            RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history first element is \"{}\"", p2mc->recv_history[0]);
 
         }
 
@@ -252,7 +252,7 @@ void ExampleRDMAThread::Start() {
         broker->PollSQ();
         if (FLAGS_server_id == 0) {
             if (p2mc->recv_history.size() != 0) {
-                RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, recv_history first element is \"{}\"", recv_history[0]);
+                RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, recv_history first element is \"{}\"", p2mc->recv_history[0]);
             }
         }
     }
