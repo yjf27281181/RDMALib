@@ -189,6 +189,8 @@ void ExampleRDMAThread::Start() {
         char *databuf = nmm->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
         // Do sth with the buf.
         databuf = "this is my data\0";
+        ostringstream oss;
+        oss << (void*)databuf;
 
         int server_id = 1;
         char *sendbuf = broker->GetSendBuf(server_id);
@@ -203,6 +205,12 @@ void ExampleRDMAThread::Start() {
         sendbuf[7] = 'z';
         sendbuf[8] = 'z';
         sendbuf[9] = 'z';
+        // everything above will be overwritten by the for-loop below
+        string dbaddr = oss.str();
+        for (uint32_t i; i < dbaddr.length(); i++) {
+            sendbuf[i] = dbaddr[i];
+        }
+        // bufMsg = strdup(oss.str().c_str()); // Holy shit this is NOT okay! strdup() returns a deep copied input string and uses malloc() internally. This is not good!
 
         uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
         RDMA_LOG(INFO) << fmt::format("sendbuf \"{}\", wr:{} imm:1", sendbuf, wr_id);
