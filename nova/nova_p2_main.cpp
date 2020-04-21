@@ -213,9 +213,10 @@ void ExampleRDMAThread::Start() {
         for (uint32_t i; i < dbaddr.length(); i++) {
             sendbuf[i] = dbaddr[i];
         }
+        sendbuf[dbaddr.length()] = '\0';
         // bufMsg = strdup(oss.str().c_str()); // Holy shit this is NOT okay! strdup() returns a deep copied input string and uses malloc() internally. This is not good!
 
-        uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
+        uint64_t wr_id = broker->PostSend(sendbuf, strlen(sendbuf), server_id, 1);
         RDMA_LOG(INFO) << fmt::format("sendbuf \"{}\", wr:{} imm:1", sendbuf, wr_id);
         broker->FlushPendingSends(server_id);
         broker->PollSQ(server_id);
