@@ -42,6 +42,10 @@ DEFINE_uint32(nrdma_workers, 0,
 // ML: first step is to implement NovaMsgCallback interface
 class P2MsgCallback : public NovaMsgCallback {
 public:
+
+    // used to record received message
+    vector<string> recv_history;
+
     bool
     ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
                   char *buf, uint32_t imm_data) override {
@@ -51,8 +55,13 @@ public:
         RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf[0]:{} [1]:{} [2]:{} [3]:{} [4]:{} [5]:{} imm:{}",
                                       ibv_wc_opcode_str(type), wr_id,
                                       remote_server_id, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], imm_data);
+        if (type == IBV_WC_RECV) {
+            string recv_str(buf); // ML: let's hope this works
+            this->recv_history.push_back(recv_str);
+        }
         return true;
     }
+
 };
 
 class ExampleRDMAThread {
@@ -220,13 +229,32 @@ void ExampleRDMAThread::Start() {
         uint64_t wr_id = broker->PostSend(sendbuf, strlen(sendbuf), server_id, 1);
         RDMA_LOG(INFO) << fmt::format("sendbuf \"{}\", wr:{} imm:1", sendbuf, wr_id);
         broker->FlushPendingSends(server_id);
+
+        // ML: in here, since broker has access to p2mc, it'll invoke this p2mc
+        // and run its only function, which is ProcessRDMAWC(). Now how do I get
+        // the char *buf available there, into right here? And remember I prefer
+        // NOT to touch the interface in nova_rdma_rc_broker.cpp. I think that
+        // may be too messy.
         broker->PollSQ(server_id);
         broker->PollRQ(server_id);
+    }
+
+    else { // should be node-1 executing this block
+        if (p2mc->recv_history.size() != 0) {
+            RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history first element is \"{}\"", recv_history[0]);
+
+        }
+
     }
 
     while (true) {
         broker->PollRQ();
         broker->PollSQ();
+        if (FLAGS_server_id == 0) {
+            if (p2mc->recv_history.size() != 0) {
+                RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, recv_history first element is \"{}\"", recv_history[0]);
+            }
+        }
     }
 }
 
