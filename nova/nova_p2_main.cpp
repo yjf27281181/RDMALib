@@ -116,12 +116,14 @@ void ExampleRDMAThread::Start() {
         // TODO finally free bufStorage
         // mem_manager->FreeItem(0, buf, scid);
 
+        // for some reason, hit "seg fault"
         int server_id = 1;
         char *sendbuf = broker->GetSendBuf(server_id);
         // Write a request into the buf.
-        // sendbuf[0] = 'a';
-        sendbuf = "READFROM";
-        *(sendbuf + 8) = *bufMsg;
+        sendbuf[0] = bufMsg[0];
+        sendbuf[1] = bufMsg[1];
+        // sendbuf = "READFROM";
+        // *(sendbuf + 8) = *bufMsg;
         uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
         // RDMA_LOG(INFO) << fmt::format("send one byte 'a' wr:{} imm:1", wr_id);
         RDMA_LOG(INFO) << fmt::format("send many bytes wr:{} imm:1", wr_id);
