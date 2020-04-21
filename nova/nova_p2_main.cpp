@@ -225,7 +225,7 @@ void ExampleRDMAThread::Start() {
         sendbuf[j] = ' ';
         j++; // point to the next empty space in sendbuf
         // Part 2- THIS_SERVER_ID
-        thisPart = ((long int)FLAGS_server_id_).to_string();
+        thisPart = ((long int)FLAGS_server_id).to_string();
         for (uint32_t i; i < thisPart.length(); i++) {
             j += i;
             sendbuf[j] = thisPart[i];
