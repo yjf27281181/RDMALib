@@ -203,28 +203,54 @@ void ExampleRDMAThread::Start() {
         char *databuf = nmm->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
         // Do sth with the buf.
         databuf = "this is my data\0";
+        uint32_t datalen = strlen(databuf); // TODO Verify correctness
         ostringstream oss;
         oss << (void*)databuf;
 
         int server_id = 1;
         char *sendbuf = broker->GetSendBuf(server_id);
         // Write a request into the buf.
-        // sendbuf[0] = 'x';
-        // sendbuf[1] = 'y';
-        // sendbuf[2] = 'z';
-        // sendbuf[3] = 'z';
-        // sendbuf[4] = 'z';
-        // sendbuf[5] = 'z';
-        // sendbuf[6] = 'z';
-        // sendbuf[7] = 'z';
-        // sendbuf[8] = 'z';
-        // sendbuf[9] = 'z';
-        // everything above will be overwritten by the for-loop below // OK this has worked...
-        string dbaddr = oss.str();
-        for (uint32_t i; i < dbaddr.length(); i++) {
-            sendbuf[i] = dbaddr[i];
+        // Goal: sendbuf{} = "P2GET 0 0x480f56 15"
+        // ("COMMAND THIS_SERVER_ID MEM_ADDR length_to_read")
+        // TODO Check for overflow! What if *sendbuf cannot fit entire message?
+        // Part 1- COMMAND
+        string thisPart = "P2GET";
+        // use for loop to deep-copy
+        uint32_t j = 0; // add'l counter to concatenate all 4 parts of entire msg
+        for (uint32_t i; i < thisPart.length(); i++) {
+            j += i;
+            sendbuf[j] = thisPart[i];
         }
-        sendbuf[dbaddr.length()] = '\0';
+        j++;
+        sendbuf[j] = ' ';
+        j++; // point to the next empty space in sendbuf
+        // Part 2- THIS_SERVER_ID
+        thisPart = FLAGS_server_id.to_string();
+        for (uint32_t i; i < thisPart.length(); i++) {
+            j += i;
+            sendbuf[j] = thisPart[i];
+        }
+        j++;
+        sendbuf[j] = ' ';
+        j++;
+        // Part 3- MEM_ADDR
+        thisPart = oss.str();
+        for (uint32_t i; i < thisPart.length(); i++) {
+            j += i;
+            sendbuf[j] = thisPart[i];
+        }
+        j++;
+        sendbuf[j] = ' ';
+        j++;
+        // TODO let's test it out first.
+
+
+
+        // string dbaddr = oss.str();
+        // for (uint32_t i; i < dbaddr.length(); i++) {
+        //     sendbuf[i] = dbaddr[i];
+        // }
+        // sendbuf[dbaddr.length()] = '\0';
         // bufMsg = strdup(oss.str().c_str()); // Holy shit this is NOT okay! strdup() returns a deep copied input string and uses malloc() internally. This is not good!
 
         uint64_t wr_id = broker->PostSend(sendbuf, strlen(sendbuf), server_id, 1);
@@ -252,10 +278,19 @@ void ExampleRDMAThread::Start() {
         broker->PollRQ();
         broker->PollSQ();
         if (FLAGS_server_id == 1) {
+            string first_recv_msg = "";
             if (p2mc->recv_history.size() != 0) {
+                // The line below gets executed. Therefore, when node-1 actually
+                // receives message "0x48f...", it's already running in here.
                 RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, recv_history first element is \"{}\"", p2mc->recv_history[0]);
+                first_recv_msg = p2mc->recv_history[0];
                 p2mc->recv_history.pop_front();
             }
+            else {
+                continue; // do nothing when no message is received!
+            }
+            // Here, first_recv_msg must have been populated.
+            // TODO: Initiate an RDMA READ operation to the location.
         }
     }
 }
