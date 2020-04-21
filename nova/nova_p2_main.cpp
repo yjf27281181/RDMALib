@@ -158,8 +158,9 @@ void ExampleRDMAThread::Start() {
     }
 
     while (true) {
-        broker->PollRQ();
-        broker->PollSQ();
+        // TODO: don't do anything yet
+        // broker->PollRQ();
+        // broker->PollSQ();
     }
 }
 
