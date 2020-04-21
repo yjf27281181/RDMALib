@@ -44,7 +44,7 @@ class P2MsgCallback : public NovaMsgCallback {
 public:
 
     // used to record received message
-    vector<string> recv_history;
+    deque<string> recv_history;
 
     bool
     ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
@@ -243,7 +243,7 @@ void ExampleRDMAThread::Start() {
     else { // should be node-1 executing this block
         if (p2mc->recv_history.size() != 0) {
             RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history first element is \"{}\"", p2mc->recv_history[0]);
-
+            p2mc->recv_history.pop_front();
         }
 
     }
@@ -251,9 +251,10 @@ void ExampleRDMAThread::Start() {
     while (true) {
         broker->PollRQ();
         broker->PollSQ();
-        if (FLAGS_server_id == 0) {
+        if (FLAGS_server_id == 1) {
             if (p2mc->recv_history.size() != 0) {
                 RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, recv_history first element is \"{}\"", p2mc->recv_history[0]);
+                p2mc->recv_history.pop_front();
             }
         }
     }
