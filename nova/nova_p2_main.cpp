@@ -120,19 +120,22 @@ void ExampleRDMAThread::Start() {
         int server_id = 1;
         char *sendbuf = broker->GetSendBuf(server_id);
         // Write a request into the buf.
-        sendbuf[0] = bufMsg[0];
-        sendbuf[1] = bufMsg[1];
-        // sendbuf = "READFROM";
+        // sendbuf[0] = bufMsg[0];
+        // sendbuf[1] = bufMsg[1]; // this seems to work fine
+        sendbuf = "READFROM";
         // *(sendbuf + 8) = *bufMsg;
         uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
         // RDMA_LOG(INFO) << fmt::format("send one byte 'a' wr:{} imm:1", wr_id);
-        RDMA_LOG(INFO) << fmt::format("send many bytes wr:{} imm:1", wr_id);
+        RDMA_LOG(INFO) << fmt::format("send {} bytes wr:{} imm:1", strlen(sendbuf), wr_id);
         broker->FlushPendingSends(server_id);
         broker->PollSQ(server_id);
         broker->PollRQ(server_id);
     }
     else {
         // TODO if we're node-1
+        int server_id = 0; // the peer we're working with
+        broker->PollSQ(server_id);
+        broker->PollRQ(server_id);
     }
 
     while (true) {
