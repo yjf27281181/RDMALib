@@ -119,8 +119,8 @@ void ExampleRDMAThread::Start() {
         int server_id = 1;
         char *sendbuf = broker->GetSendBuf(server_id);
         // Write a request into the buf.
-        sendbuf[0] = 'a';
-        *sendbuf = "READFROM";
+        // sendbuf[0] = 'a';
+        sendbuf = "READFROM";
         *(sendbuf + 8) = *bufMsg;
         uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
         // RDMA_LOG(INFO) << fmt::format("send one byte 'a' wr:{} imm:1", wr_id);
