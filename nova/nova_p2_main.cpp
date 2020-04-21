@@ -45,9 +45,12 @@ public:
     bool
     ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
                   char *buf, uint32_t imm_data) override {
+        // RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:{} imm:{}",
+        //                               ibv_wc_opcode_str(type), wr_id,
+        //                               remote_server_id, buf[0], imm_data);
         RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:{} imm:{}",
                                       ibv_wc_opcode_str(type), wr_id,
-                                      remote_server_id, buf[0], imm_data);
+                                      remote_server_id, buf, imm_data);
         return true;
     }
 };
@@ -195,17 +198,17 @@ void ExampleRDMAThread::Start() {
         int server_id = 1;
         char *sendbuf = broker->GetSendBuf(server_id);
         // Write a request into the buf.
-        sendbuf[0] = 'x';
-        sendbuf[1] = 'y';
-        sendbuf[2] = 'z';
-        sendbuf[3] = 'z';
-        sendbuf[4] = 'z';
-        sendbuf[5] = 'z';
-        sendbuf[6] = 'z';
-        sendbuf[7] = 'z';
-        sendbuf[8] = 'z';
-        sendbuf[9] = 'z';
-        // everything above will be overwritten by the for-loop below
+        // sendbuf[0] = 'x';
+        // sendbuf[1] = 'y';
+        // sendbuf[2] = 'z';
+        // sendbuf[3] = 'z';
+        // sendbuf[4] = 'z';
+        // sendbuf[5] = 'z';
+        // sendbuf[6] = 'z';
+        // sendbuf[7] = 'z';
+        // sendbuf[8] = 'z';
+        // sendbuf[9] = 'z';
+        // everything above will be overwritten by the for-loop below // OK this has worked...
         string dbaddr = oss.str();
         for (uint32_t i; i < dbaddr.length(); i++) {
             sendbuf[i] = dbaddr[i];
