@@ -121,6 +121,7 @@ void ExampleRDMAThread::Start() {
         bufMsg = strdup(oss.str().c_str());
         // cout << "bufMsg contains value: " << bufMsg << endl;
         RDMA_LOG(INFO) << fmt::format("bufMsg contains value: {}", bufMsg);
+        RDMA_LOG(INFO) << fmt::format("bufMsg lives at: {}", (void*)bufMsg);
         // result of line above:
         // Mon Apr 20 04:36:16 2020, [nova_p2_main.cpp:106] bufMsg contains value: 0x47f8c8
 
