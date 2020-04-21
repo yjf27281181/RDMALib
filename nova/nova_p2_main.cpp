@@ -188,7 +188,17 @@ void ExampleRDMAThread::Start() {
         char *sendbuf = broker->GetSendBuf(server_id);
         // Write a request into the buf.
         sendbuf[0] = 'x';
-        sendbuf[1] = 'z';
+        sendbuf[1] = 'y';
+        sendbuf[2] = 'z';
+        sendbuf[3] = 'z';
+        sendbuf[4] = 'z';
+        sendbuf[5] = 'z';
+        sendbuf[6] = 'z';
+        sendbuf[7] = 'z';
+        sendbuf[8] = 'z';
+        sendbuf[9] = 'z';
+        sendbuf[10] = 'z';
+
         uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
         RDMA_LOG(INFO) << fmt::format("sendbuf \"{}\", wr:{} imm:1", sendbuf, wr_id);
         broker->FlushPendingSends(server_id);
