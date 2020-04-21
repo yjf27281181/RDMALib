@@ -183,7 +183,7 @@ void ExampleRDMAThread::Start() {
                                                     1024 *
                                                     1024 * 1024,
                                                     FLAGS_rdma_port,
-                                                    new DummyNovaMsgCallback);
+                                                    new NovaMsgCallback);
     broker->Init(ctrl_);
 
     if (FLAGS_server_id == 0) {
