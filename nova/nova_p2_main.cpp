@@ -184,6 +184,12 @@ void ExampleRDMAThread::Start() {
     broker->Init(ctrl_);
 
     if (FLAGS_server_id == 0) {
+        // step 1- setup a memory block to store data item
+        uint32_t scid = this.nmm->slabclassid(0, 40);
+        char *databuf = nmm->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
+        // Do sth with the buf.
+        databuf = "lmao this should fit\0";
+
         int server_id = 1;
         char *sendbuf = broker->GetSendBuf(server_id);
         // Write a request into the buf.
@@ -197,7 +203,6 @@ void ExampleRDMAThread::Start() {
         sendbuf[7] = 'z';
         sendbuf[8] = 'z';
         sendbuf[9] = 'z';
-        sendbuf[10] = 'z';
 
         uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
         RDMA_LOG(INFO) << fmt::format("sendbuf \"{}\", wr:{} imm:1", sendbuf, wr_id);
