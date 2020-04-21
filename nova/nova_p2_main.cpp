@@ -48,9 +48,9 @@ public:
         // RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:{} imm:{}",
         //                               ibv_wc_opcode_str(type), wr_id,
         //                               remote_server_id, buf[0], imm_data);
-        RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:{} imm:{}",
+        RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf[0]:{} [1]:{} [2]:{} [3]:{} [4]:{} [5]:{} imm:{}",
                                       ibv_wc_opcode_str(type), wr_id,
-                                      remote_server_id, buf, imm_data);
+                                      remote_server_id, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], imm_data);
         return true;
     }
 };
