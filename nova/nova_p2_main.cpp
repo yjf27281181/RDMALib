@@ -82,6 +82,7 @@ ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
 // node-1 should: 1. wait to RECV a msg from node-0 indication memory location,
 // 2. use RDMA READ to obtain data from that location 3. use SEND to signal
 // node-0 to free that memory.
+/*
 void ExampleRDMAThread::Start() {
 // A thread i at server j connects to thread i of all other servers.
     // ML: for testing
@@ -163,7 +164,42 @@ void ExampleRDMAThread::Start() {
         // broker->PollSQ();
     }
 }
+*/
 
+// let's first test a few things out. For instance, a longer string than 'a'.
+void ExampleRDMAThread::Start() {
+// A thread i at server j connects to thread i of all other servers.
+    NovaRDMARCBroker *broker = new NovaRDMARCBroker(circular_buffer_, 0,
+                                                    endpoints_,
+                                                    FLAGS_rdma_max_num_sends,
+                                                    FLAGS_rdma_max_msg_size,
+                                                    FLAGS_rdma_doorbell_batch_size,
+                                                    FLAGS_server_id,
+                                                    rdma_backing_mem_,
+                                                    FLAGS_mem_pool_size_gb *
+                                                    1024 *
+                                                    1024 * 1024,
+                                                    FLAGS_rdma_port,
+                                                    new DummyNovaMsgCallback);
+    broker->Init(ctrl_);
+
+    if (FLAGS_server_id == 0) {
+        int server_id = 1;
+        char *sendbuf = broker->GetSendBuf(server_id);
+        // Write a request into the buf.
+        sendbuf[0] = 'a';
+        uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
+        RDMA_LOG(INFO) << fmt::format("send one byte 'a' wr:{} imm:1", wr_id);
+        broker->FlushPendingSends(server_id);
+        broker->PollSQ(server_id);
+        broker->PollRQ(server_id);
+    }
+
+    while (true) {
+        broker->PollRQ();
+        broker->PollSQ();
+    }
+}
 
 int main(int argc, char *argv[]) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
