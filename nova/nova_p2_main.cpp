@@ -242,6 +242,8 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // string supplierServerID = instruction.substr(6, 1);
     uint32_t supplierServerID = stoi(instruction.substr(6, 1));
     string memAddr = instruction.substr(8, 8);
+    char[] memAddrCStr = memAddr.c_str()
+    unsigned long int memAddrUL = strtoul(memAddrCStr, NULL, 16);
     // string length = instruction.substr(17);  // this reads [17, end)
     size_t length = stoi(instruction.substr(17));
     // RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
@@ -268,11 +270,16 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
                                                 // *readbuf from main()
     char *readbuf = nmm_->ItemAlloc(0, scid);
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
-
     // try with local_offset = 0 (should be correct)
-    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, /*(uint64_t)*/(reinterpret_cast<char*>(memAddr)), false);
+    // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, /*(uint64_t)*/(reinterpret_cast<char*>(memAddr)), false);
+    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, memAddrUL, false);
 
-    // RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\", wr:{} imm:1", readbuf, wr_id);
+    // TODO!! there is no elegant way to convert remote server memory addresses
+    // (where to read from) to a string, and convert it back. Try using uint64_t
+    // from the very beginning, with some format-specified printing in RDMA_LOG
+    // should make things work.
+
+    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\", wr:{} imm:1", readbuf, wr_id);
 
 
     // broker_->FlushPendingSends(supplierServerID);
