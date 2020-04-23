@@ -240,14 +240,14 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // ("COMMAND SUPPLIER_SERVER_ID MEM_ADDR LENGTH_TO_READ")
     assert(instruction.substr(0, 5) == "P2GET"); // might remove to run faster
     // string supplierServerID = instruction.substr(6, 1);
-    uint32_t supplierServerID = stoi(instruction.substr(6, 1));
+    int supplierServerID = stoi(instruction.substr(6, 1));
     string memAddr = instruction.substr(8, 8);
     // char memAddrCStr[] = memAddr.c_str(); // compiler complains since unknown size
     char memAddrCStr[8];
     strcpy(memAddrCStr, &memAddr[0]);
     unsigned long int memAddrUL = strtoul(memAddrCStr, NULL, 16);
     // string length = instruction.substr(17);  // this reads [17, end)
-    size_t length = stoi(instruction.substr(17));
+    uint32_t length = stoi(instruction.substr(17));
     // RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, stoi(mem_addr): {}, length: {}", supplierServerID, stoi(memAddr), length);
 
@@ -274,14 +274,14 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
     // try with local_offset = 0 (should be correct)
     // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, /*(uint64_t)*/(reinterpret_cast<char*>(memAddr)), false);
-    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, memAddrUL, false);
+    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 1, (uint64_t)memAddrUL, false);
 
     // TODO!! there is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
     // from the very beginning, with some format-specified printing in RDMA_LOG
     // should make things work.
 
-    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\", wr:{} imm:1", readbuf, wr_id);
+    // RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\", wr:{} imm:1", readbuf, wr_id);
 
 
     // broker_->FlushPendingSends(supplierServerID);
