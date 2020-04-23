@@ -272,8 +272,15 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
                                                 // *readbuf from main()
     char *readbuf = nmm_->ItemAlloc(0, scid);
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
+    RDMA_LOG(INFO) << fmt::format("Attempting to read from: \"{}\"", (uint64_t)memAddrUL); // examine if readbuf contains stuff to begin with
     // try with local_offset = 0 (should be correct)
     // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, /*(uint64_t)*/(reinterpret_cast<char*>(memAddr)), false);
+
+    // TODO!!! for some reason the line below keeps erroring out with:
+    // node-1 (read initiator)
+    // [nova_rdma_rc_broker.cpp:328] Assertion! rdma-rc[0]: SQ error wc status 10 str:remote access error serverid 0
+    // node-0 (read receiver)
+    // [nova_rdma_rc_broker.cpp:379] Assertion! rdma-rc[0]: RQ error wc status Work Request Flushed Error
     // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 1, (uint64_t)memAddrUL, false);
 
     // TODO!! there is no elegant way to convert remote server memory addresses
