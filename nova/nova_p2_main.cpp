@@ -237,9 +237,9 @@ void ExampleRDMAThread::Start() {
         sendbuf[j] = ' ';
         j++; // point to the next empty space in sendbuf
         // Part 2- THIS_SERVER_ID
-        stringstream ss;
-        ss << FLAGS_server_id;
-        ss >> thisPart;
+        stringstream ss1;
+        ss1 << FLAGS_server_id;
+        ss1 >> thisPart;
         for (size_t i; i < thisPart.length(); i++) {
             sendbuf[j] = thisPart[i];
             j++;
@@ -249,10 +249,10 @@ void ExampleRDMAThread::Start() {
         j++;
         // Part 3- MEM_ADDR
         // use stringstream to store databuf's address
-        ostringstream oss;
-        oss << (void*)databuf;
+        stringstream ss2;
+        ss2 << (void*)databuf;
         // thisPart = oss.str();
-        oss >> thisPart; // TODO! verify correctness
+        ss2 >> thisPart; // TODO! verify correctness
         for (size_t i; i < thisPart.length(); i++) {
             sendbuf[j] = thisPart[i];
             j++;
