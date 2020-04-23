@@ -228,21 +228,20 @@ void ExampleRDMAThread::ReceiveRDMAReadInstruction() {
 
 void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // TODO how do I do sanity check?
-    vector<string> instrTokens;
-    char *token = strtok(instruction.c_str(), " ");
-    while (token)
-    {
-        string oneToken(token);
-        instrTokens.push_back(oneToken);
-        // cout << token << endl;
-        token = strtok(NULL, " ");
-    }
 
-    RDMA_LOG(INFO) << fmt::format("instrTokens size: {}", instrTokens.size());
-    for (size_t i = 0; i < instrTokens.size(); i++) {
-        RDMA_LOG(INFO) << fmt::format("instrTokens[{}]: {}", i, instrTokens[i]);
-    }
+    // I really need this to work FAST, hence hard-coded indexing
+    // NOTE: assume 1-digit server id
+    // instruction look like: "P2GET 0 0x480f56 15"
+    //                         [0    [6[8       [18
+    // ("COMMAND SUPPLIER_SERVER_ID MEM_ADDR LENGTH_TO_READ")
+    assert(instruction.substr(0, 5) == "P2GET"); // might remove to run faster
+    uint32_t supplierServerID = stoi(instruction.substr(6, 1));
+    string memAddr = instruction.substr(8, 8);
+    size_t length = instruction.substr(15); // this reads [15, end)
+    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier server id: {}, mem addr: {}, length: {}", supplierServerID, memAddr, length);
+
     // TODO actually read
+
 }
 
 int main(int argc, char *argv[]) {
