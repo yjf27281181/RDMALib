@@ -244,7 +244,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     string memAddr = instruction.substr(8, 8);
     // char memAddrCStr[] = memAddr.c_str(); // compiler complains since unknown size
     char memAddrCStr[8];
-    strcpy(memAddrCStr, &memAddr[0])
+    strcpy(memAddrCStr, &memAddr[0]);
     unsigned long int memAddrUL = strtoul(memAddrCStr, NULL, 16);
     // string length = instruction.substr(17);  // this reads [17, end)
     size_t length = stoi(instruction.substr(17));
