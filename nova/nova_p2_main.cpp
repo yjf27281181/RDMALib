@@ -262,7 +262,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     //                   uint64_t local_offset,
     //                   uint64_t remote_addr, bool is_remote_offset);
 
-    uint32_t scid = nmm_->slabclassid(0, 40);
+    uint32_t scid = nmm_->slabclassid(0, 2000);
     char *readbuf = nmm_->ItemAlloc(0, scid);
     // try with local_offset = 0 (should be correct)
     // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, (uint64_t)stoi(memAddr), false);
