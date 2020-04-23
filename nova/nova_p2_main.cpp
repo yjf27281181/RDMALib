@@ -258,7 +258,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     int supplierServerID;
     ss >> supplierServerID;
     uint64_t memAddr;
-    ss >> memaddr;
+    ss >> memAddr;
     uint32_t length;
     ss >> length;
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
