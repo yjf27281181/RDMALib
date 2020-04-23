@@ -204,7 +204,6 @@ void ExampleRDMAThread::Start() {
                                                  // 40 bytes" slab class
         // Do sth with the buf.
         databuf = "this is my data\0";
-        // uint32_t datalen = strlen(databuf); // TODO Verify correctness
 
 
         int server_id = 1;
@@ -222,8 +221,8 @@ void ExampleRDMAThread::Start() {
         // Write a request into the buf.
 
         // Goal: sendbuf{} = "P2GET 0 0x480f56 15"
-        // ("COMMAND THIS_SERVER_ID MEM_ADDR length_to_read")
-        // TODO Check for overflow! What if *sendbuf cannot fit entire message?
+        // ("COMMAND THIS_SERVER_ID MEM_ADDR LENGTH_TO_READ")
+        // DONE: Mind overflow! *sendbuf should hold 1024 bytes.
 
         // Part 1- COMMAND
         string thisPart = "P2GET";
@@ -251,8 +250,7 @@ void ExampleRDMAThread::Start() {
         // use stringstream to store databuf's address
         stringstream ss2;
         ss2 << (void*)databuf;
-        // thisPart = oss.str();
-        ss2 >> thisPart; // TODO! verify correctness
+        ss2 >> thisPart;
         for (size_t i; i < thisPart.length(); i++) {
             sendbuf[j] = thisPart[i];
             j++;
@@ -260,16 +258,17 @@ void ExampleRDMAThread::Start() {
         // j++;
         sendbuf[j] = ' ';
         j++;
-        // TODO let's test it out first.
-
-
-
-        // string dbaddr = oss.str();
-        // for (uint32_t i; i < dbaddr.length(); i++) {
-        //     sendbuf[i] = dbaddr[i];
-        // }
-        // sendbuf[dbaddr.length()] = '\0';
-        // bufMsg = strdup(oss.str().c_str()); // Holy shit this is NOT okay! strdup() returns a deep copied input string and uses malloc() internally. This is not good!
+        // DONE: everything above worked!
+        // Part 4- LENGTH_TO_READ
+        size_t datalen = strlen(databuf); // TODO Verify correctness
+        stringstream ss3;
+        ss3 << datalen;
+        ss3 >> thispart;
+        for (size_t i; i < thisPart.length(); i++) {
+            sendbuf[j] = thisPart[i];
+            j++;
+        }
+        // Finished building message string.
 
         uint64_t wr_id = broker->PostSend(sendbuf, strlen(sendbuf), server_id, 1);
         RDMA_LOG(INFO) << fmt::format("sendbuf \"{}\", wr:{} imm:1", sendbuf, wr_id);
