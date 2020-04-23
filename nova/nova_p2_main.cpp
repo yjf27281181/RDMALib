@@ -239,12 +239,12 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     //                         [0    [6[8       [18
     // ("COMMAND SUPPLIER_SERVER_ID MEM_ADDR LENGTH_TO_READ")
     assert(instruction.substr(0, 5) == "P2GET"); // might remove to run faster
-    // uint32_t supplierServerID = stoi(instruction.substr(6, 1));
-    string supplierServerID = instruction.substr(6, 1);
+    // string supplierServerID = instruction.substr(6, 1);
+    uint32_t supplierServerID = stoi(instruction.substr(6, 1));
     string memAddr = instruction.substr(8, 8);
-    // size_t length = stoi(instruction.substr(15)); // this reads [15, end)
-    string length = instruction.substr(15);
-    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier server id: {}, mem addr: {}, length: {}", supplierServerID, memAddr, length);
+    // string length = instruction.substr(18);  // this reads [18, end)
+    size_t length = stoi(instruction.substr(18));
+    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
 
     // TODO actually read
 
