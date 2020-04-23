@@ -281,7 +281,8 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // [nova_rdma_rc_broker.cpp:328] Assertion! rdma-rc[0]: SQ error wc status 10 str:remote access error serverid 0
     // node-0 (read receiver)
     // [nova_rdma_rc_broker.cpp:379] Assertion! rdma-rc[0]: RQ error wc status Work Request Flushed Error
-    // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 1, (uint64_t)memAddrUL, false);
+
+    uint64_t wr_id = broker_->PostRead(readbuf, 3, supplierServerID, 0, (uint64_t)memAddrUL, false);
 
     // TODO!! there is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
