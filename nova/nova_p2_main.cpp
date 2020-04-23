@@ -50,7 +50,7 @@ public:
     ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
                   char *buf, uint32_t imm_data) override {
         string bufContent(buf);
-        RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf[]:{} imm:{}",
+        RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:\"{}\" imm:{}",
                                       ibv_wc_opcode_str(type), wr_id,
                                       remote_server_id, bufContent, imm_data);
         // if (type == IBV_WC_RECV) { // TODO needs fixing
@@ -66,7 +66,9 @@ class ExampleRDMAThread {
 private:
     NovaMemManager *nmm_;
     NovaRDMARCBroker *broker_;
-    P2MsgCallback *p2mc;
+    P2MsgCallback *p2mc_;
+    // const uint32_t my_server_id_;
+
 public:
     ExampleRDMAThread(NovaMemManager*);
     void Start();
@@ -98,19 +100,19 @@ ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
 // node-0 to free that memory.
 void ExampleRDMAThread::Start() {
 // A thread i at server j connects to thread i of all other servers.
-    p2mc = new P2MsgCallback;
+    p2mc_ = new P2MsgCallback;
     broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
-                                        endpoints_,
-                                        FLAGS_rdma_max_num_sends,
-                                        FLAGS_rdma_max_msg_size,
-                                        FLAGS_rdma_doorbell_batch_size,
-                                        FLAGS_server_id,
-                                        rdma_backing_mem_,
-                                        FLAGS_mem_pool_size_gb *
-                                        1024 *
-                                        1024 * 1024,
-                                        FLAGS_rdma_port,
-                                        p2mc);
+                                    endpoints_,
+                                    FLAGS_rdma_max_num_sends,
+                                    FLAGS_rdma_max_msg_size,
+                                    FLAGS_rdma_doorbell_batch_size,
+                                    FLAGS_server_id,
+                                    rdma_backing_mem_,
+                                    FLAGS_mem_pool_size_gb *
+                                    1024 *
+                                    1024 * 1024,
+                                    FLAGS_rdma_port,
+                                    p2mc_);
     broker_->Init(ctrl_);
 
     if (FLAGS_server_id == 0) {
@@ -122,7 +124,7 @@ void ExampleRDMAThread::Start() {
         databuf = "this is my data\0";
 
         int server_id = 1;
-        char *sendbuf = broker_->GetSendBuf(server_id); // DONE: check what's the
+        char *sendbuf = broker_->GetSendBuf(server_id);// DONE: check what's the
                                                        // size of this message
                                                        // buffer. Data buffer is
                                                        // clearly 40-bytes.
@@ -186,9 +188,9 @@ void ExampleRDMAThread::Start() {
 
     else { // should be node-1 executing this block
         ReceiveRDMAReadInstruction();
-        if (p2mc->recv_history_.size() != 0) {
-            RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history_ first element is \"{}\"", p2mc->recv_history_[0]);
-            p2mc->recv_history_.pop_front();
+        if (p2mc_->recv_history_.size() != 0) {
+            RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history_ first element is \"{}\"", p2mc_->recv_history_[0]);
+            p2mc_->recv_history_.pop_front();
             // initiate_read();
         }
 
@@ -199,12 +201,12 @@ void ExampleRDMAThread::Start() {
         broker_->PollSQ();
         if (FLAGS_server_id == 1) {
             string recv_msg = "";
-            if (p2mc->recv_history_.size() != 0) {
+            if (p2mc_->recv_history_.size() != 0) {
                 // The line below gets executed. Therefore, when node-1 actually
                 // receives message "0x48f...", it's already running in here.
-                RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, recv_history_ first element is \"{}\"", p2mc->recv_history_[0]);
-                recv_msg = p2mc->recv_history_[0];
-                p2mc->recv_history_.pop_front();
+                RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, recv_history_ first element is \"{}\"", p2mc_->recv_history_[0]);
+                recv_msg = p2mc_->recv_history_[0];
+                p2mc_->recv_history_.pop_front();
             }
             else {
                 continue; // do nothing when no message is received!
@@ -214,8 +216,33 @@ void ExampleRDMAThread::Start() {
 }
 
 void ExampleRDMAThread::ReceiveRDMAReadInstruction() {
-    // if ()
-    // TODO
+    assert(FLAGS_server_id == 1); // let upper level ensure this
+    if (p2mc_->recv_history_.size() != 0) {
+        string recvMsg = p2mc_->recv_history_[0];
+        RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, popping recv_history_[0]: \"{}\"", recvMsg);
+        p2mc_->recv_history_.pop_front();
+        // Now initiate the RDMA read operation, using recvMsg as instruction
+        ExecuteRDMARead(recvMsg);
+    }
+}
+
+void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
+    // TODO how do I do sanity check?
+    vector<string> instrTokens;
+    char *token = strtok(instruction, " ");
+    while (token)
+    {
+        string oneToken(token);
+        instrTokens.push_back(oneToken);
+        // cout << token << endl;
+        token = strtok(NULL,delim);
+    }
+
+    RDMA_LOG(INFO) << fmt::format("instrTokens size: {}", instrTokens.size());
+    for (size_t i = 0; i < instrTokens.size(); i++) {
+        RDMA_LOG(INFO) << fmt::format("instrTokens[{}]: {}", i, instrTokens[i]);
+    }
+    // TODO actually read
 }
 
 int main(int argc, char *argv[]) {
