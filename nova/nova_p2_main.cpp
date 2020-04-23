@@ -262,13 +262,18 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     //                   uint64_t local_offset,
     //                   uint64_t remote_addr, bool is_remote_offset);
 
-    uint32_t scid = nmm_->slabclassid(0, 2000);
+    uint32_t scid = nmm_->slabclassid(0, 2000); // using 2000 ( >> 40) results
+                                                // in a different slab class
+                                                // which doesn't collide with
+                                                // *readbuf from main()
     char *readbuf = nmm_->ItemAlloc(0, scid);
+    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
+
     // try with local_offset = 0 (should be correct)
-    // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, (uint64_t)stoi(memAddr), false);
+    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, (uint64_t)(reinterpret_cast<char*>(memAddr)), false);
 
     // RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\", wr:{} imm:1", readbuf, wr_id);
-    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
+
 
     // broker_->FlushPendingSends(supplierServerID);
 }
