@@ -263,7 +263,7 @@ void ExampleRDMAThread::Start() {
         size_t datalen = strlen(databuf); // TODO Verify correctness
         stringstream ss3;
         ss3 << datalen;
-        ss3 >> thispart;
+        ss3 >> thisPart;
         for (size_t i; i < thisPart.length(); i++) {
             sendbuf[j] = thisPart[i];
             j++;
