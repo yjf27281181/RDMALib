@@ -270,7 +270,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
 
     // try with local_offset = 0 (should be correct)
-    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, (uint64_t)(reinterpret_cast<char*>(memAddr)), false);
+    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, /*(uint64_t)*/(reinterpret_cast<char*>(memAddr)), false);
 
     // RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\", wr:{} imm:1", readbuf, wr_id);
 
