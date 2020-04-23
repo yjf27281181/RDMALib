@@ -119,7 +119,7 @@ void ExampleRDMAThread::Start() {
         // step 1- setup a memory block to store data item
         uint32_t scid = nmm_->slabclassid(0, 40);
         char *databuf = nmm_->ItemAlloc(0, scid); // allocate an item of "size =
-                                                 // 40 bytes" slab class
+                                                  // 40 bytes" slab class
         // Do sth with the buf.
         databuf = "this is my data\0";
 
@@ -180,7 +180,7 @@ void ExampleRDMAThread::Start() {
         // Finished building message string (sendbuf).
 
         uint64_t wr_id = broker_->PostSend(sendbuf, strlen(sendbuf), server_id, 1);
-        RDMA_LOG(INFO) << fmt::format("sendbuf \"{}\", wr:{} imm:1", sendbuf, wr_id);
+        RDMA_LOG(INFO) << fmt::format("PostSend(): sendbuf \"{}\", wr:{} imm:1", sendbuf, wr_id);
         broker_->FlushPendingSends(server_id);
         broker_->PollSQ(server_id);
         broker_->PollRQ(server_id);
@@ -242,12 +242,34 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // string supplierServerID = instruction.substr(6, 1);
     uint32_t supplierServerID = stoi(instruction.substr(6, 1));
     string memAddr = instruction.substr(8, 8);
-    // string length = instruction.substr(18);  // this reads [18, end)
-    size_t length = stoi(instruction.substr(18));
-    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
+    // string length = instruction.substr(17);  // this reads [17, end)
+    size_t length = stoi(instruction.substr(17));
+    // RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
+    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, stoi(mem_addr): {}, length: {}", supplierServerID, stoi(memAddr), length);
 
     // TODO actually read
 
+    // RDMA Read might work with a memory region that is NOT registerd with RNIC
+    // but I'm not sure. To be safe, start with RNIC-registered block, but later
+    // on try good o' malloc() to see if I can reduce RNIC-registered memory
+    // usage.
+
+    // Additionally, instead of using broker_->GetSendBuf(), try ItemAlloc()
+    // first.
+
+
+    // uint64_t PostRead(char *localbuf, uint32_t size, int remote_server_id,
+    //                   uint64_t local_offset,
+    //                   uint64_t remote_addr, bool is_remote_offset);
+
+    uint32_t scid = nmm_->slabclassid(0, 40);
+    char *readbuf = nmm_->ItemAlloc(0, scid);
+    // try with local_offset = 0 (should be correct)
+    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, (uint64_t)stoi(memAddr), false);
+
+    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\", wr:{} imm:1", readbuf, wr_id);
+
+    broker_->FlushPendingSends(supplierServerID);
 }
 
 int main(int argc, char *argv[]) {
