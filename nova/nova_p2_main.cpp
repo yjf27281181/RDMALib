@@ -274,7 +274,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
     // try with local_offset = 0 (should be correct)
     // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, /*(uint64_t)*/(reinterpret_cast<char*>(memAddr)), false);
-    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 1, (uint64_t)memAddrUL, false);
+    // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 1, (uint64_t)memAddrUL, false);
 
     // TODO!! there is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
