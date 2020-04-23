@@ -160,7 +160,8 @@ void ExampleRDMAThread::Start() {
         j++;
         // Part 3- MEM_ADDR
         stringstream ss2;
-        ss2 << (void*)databuf;
+        // ss2 << (void*)databuf; // TODO!!!!
+        ss2 << (uint64_t)databuf;
         ss2 >> thisPart;
         for (size_t i; i < thisPart.length(); i++) {
             sendbuf[j] = thisPart[i];
@@ -239,6 +240,8 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     //                         [0    [6[8       [18
     // ("COMMAND SUPPLIER_SERVER_ID MEM_ADDR LENGTH_TO_READ")
     assert(instruction.substr(0, 5) == "P2GET"); // might remove to run faster
+
+    /*
     // string supplierServerID = instruction.substr(6, 1);
     int supplierServerID = stoi(instruction.substr(6, 1));
     string memAddr = instruction.substr(8, 8);
@@ -248,6 +251,22 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     unsigned long int memAddrUL = strtoul(memAddrCStr, NULL, 16);
     // string length = instruction.substr(17);  // this reads [17, end)
     uint32_t length = stoi(instruction.substr(17));
+    */
+
+    stringstream ss;
+    ss << instruction;
+    int supplierServerID;
+    ss >> supplierServerID;
+    uint64_t memAddr;
+    ss >> memaddr;
+    uint32_t length;
+    ss >> length;
+    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
+
+
+
+
+    /*
     // RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, stoi(mem_addr): {}, length: {}", supplierServerID, stoi(memAddr), length);
 
@@ -274,7 +293,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
     RDMA_LOG(INFO) << fmt::format("Attempting to read from: \"{}\"", (uint64_t)memAddrUL); // examine if readbuf contains stuff to begin with
     // try with local_offset = 0 (should be correct)
-    // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, /*(uint64_t)*/(reinterpret_cast<char*>(memAddr)), false);
+    // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, (reinterpret_cast<char*>(memAddr)), false);
 
     // TODO!!! for some reason the line below keeps erroring out with:
     // node-1 (read initiator)
@@ -293,6 +312,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
 
 
     // broker_->FlushPendingSends(supplierServerID);
+    */
 }
 
 int main(int argc, char *argv[]) {
