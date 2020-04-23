@@ -229,13 +229,13 @@ void ExampleRDMAThread::ReceiveRDMAReadInstruction() {
 void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // TODO how do I do sanity check?
     vector<string> instrTokens;
-    char *token = strtok(instruction, " ");
+    char *token = strtok(instruction.c_str(), " ");
     while (token)
     {
         string oneToken(token);
         instrTokens.push_back(oneToken);
         // cout << token << endl;
-        token = strtok(NULL,delim);
+        token = strtok(NULL, " ");
     }
 
     RDMA_LOG(INFO) << fmt::format("instrTokens size: {}", instrTokens.size());
