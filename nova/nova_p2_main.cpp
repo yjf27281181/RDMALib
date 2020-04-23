@@ -200,48 +200,64 @@ void ExampleRDMAThread::Start() {
     if (FLAGS_server_id == 0) {
         // step 1- setup a memory block to store data item
         uint32_t scid = this->nmm->slabclassid(0, 40);
-        char *databuf = nmm->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
+        char *databuf = nmm->ItemAlloc(0, scid); // allocate an item of "size =
+                                                 // 40 bytes" slab class
         // Do sth with the buf.
         databuf = "this is my data\0";
-        uint32_t datalen = strlen(databuf); // TODO Verify correctness
-        ostringstream oss;
-        oss << (void*)databuf;
+        // uint32_t datalen = strlen(databuf); // TODO Verify correctness
+
 
         int server_id = 1;
-        char *sendbuf = broker->GetSendBuf(server_id);
+        char *sendbuf = broker->GetSendBuf(server_id); // DONE: check what's the
+                                                       // size of this message
+                                                       // buffer. Data buffer is
+                                                       // clearly 40-bytes.
+                                                       // Seems it's set in cmd-
+                                                       // line args, and it's
+                                                       // 1024 bytes. Should be
+                                                       // sufficient to hold the
+                                                       // message.
+
+
         // Write a request into the buf.
+
         // Goal: sendbuf{} = "P2GET 0 0x480f56 15"
         // ("COMMAND THIS_SERVER_ID MEM_ADDR length_to_read")
         // TODO Check for overflow! What if *sendbuf cannot fit entire message?
+
         // Part 1- COMMAND
         string thisPart = "P2GET";
         // use for loop to deep-copy
         uint32_t j = 0; // add'l counter to concatenate all 4 parts of entire msg
-        for (uint32_t i; i < thisPart.length(); i++) {
-            j += i;
+        for (size_t i; i < thisPart.length(); i++) {
             sendbuf[j] = thisPart[i];
+            j++;
         }
-        j++;
+        // j++;
         sendbuf[j] = ' ';
         j++; // point to the next empty space in sendbuf
         // Part 2- THIS_SERVER_ID
         stringstream ss;
         ss << FLAGS_server_id;
         ss >> thisPart;
-        for (uint32_t i; i < thisPart.length(); i++) {
-            j += i;
+        for (size_t i; i < thisPart.length(); i++) {
             sendbuf[j] = thisPart[i];
+            j++;
         }
-        j++;
+        // j++;
         sendbuf[j] = ' ';
         j++;
         // Part 3- MEM_ADDR
-        thisPart = oss.str();
-        for (uint32_t i; i < thisPart.length(); i++) {
-            j += i;
+        // use stringstream to store databuf's address
+        ostringstream oss;
+        oss << (void*)databuf;
+        // thisPart = oss.str();
+        oss >> thisPart; // TODO! verify correctness
+        for (size_t i; i < thisPart.length(); i++) {
             sendbuf[j] = thisPart[i];
+            j++;
         }
-        j++;
+        // j++;
         sendbuf[j] = ' ';
         j++;
         // TODO let's test it out first.
@@ -321,8 +337,8 @@ int main(int argc, char *argv[]) {
     NovaConfig::config->servers = hosts;
     NovaConfig::config->rdma_port = FLAGS_rdma_port;
     NovaConfig::config->rdma_doorbell_batch_size = FLAGS_rdma_doorbell_batch_size;
-    NovaConfig::config->max_msg_size = FLAGS_rdma_max_msg_size;
-    NovaConfig::config->rdma_max_num_sends = FLAGS_rdma_max_num_sends;
+    NovaConfig::config->max_msg_size = FLAGS_rdma_max_msg_size;                                                         // ML: set to 1024
+    NovaConfig::config->rdma_max_num_sends = FLAGS_rdma_max_num_sends;                                                  // ML: set to 128 in command-line execution
 
     RdmaCtrl *ctrl = new RdmaCtrl(FLAGS_server_id, FLAGS_rdma_port);
     std::vector<QPEndPoint> endpoints;

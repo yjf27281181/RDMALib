@@ -51,7 +51,7 @@ namespace nova {
 
         wcs_ = (ibv_wc *) malloc(max_num_wrs * sizeof(ibv_wc));
         qp_ = (RCQP **) malloc(num_servers * sizeof(RCQP *));
-        rdma_send_buf_ = (char **) malloc(num_servers * sizeof(char *));
+        rdma_send_buf_ = (char **) malloc(num_servers * sizeof(char *)); // ML: Think of it as "aray of char*", therefore "one-char*-per-server"
         rdma_recv_buf_ = (char **) malloc(num_servers * sizeof(char *));
         send_sges_ = (struct ibv_sge **) malloc(
                 num_servers * sizeof(struct ibv_sge *));
@@ -77,7 +77,7 @@ namespace nova {
             rdma_recv_buf_[i] = rdma_buf_start + nbuf * i;
             memset(rdma_recv_buf_[i], 0, nrecvbuf);
 
-            rdma_send_buf_[i] = rdma_recv_buf_[i] + nrecvbuf;
+            rdma_send_buf_[i] = rdma_recv_buf_[i] + nrecvbuf; // ML: point to right after the corresponding recv_buf (which starts at recv_buf_[i] and has length nrecvbuf)
             memset(rdma_send_buf_[i], 0, nsendbuf);
 
             send_sges_[i] = (ibv_sge *) malloc(
@@ -405,12 +405,16 @@ namespace nova {
         return size;
     }
 
+    // ML: so the point is to just dis-allow getting sendbuf without a
+    // (destination) server_id? Or is it useful sometimes calling this?
     char *NovaRDMARCBroker::GetSendBuf() {
         return NULL;
     }
 
     char *NovaRDMARCBroker::GetSendBuf(int server_id) {
         uint32_t qp_idx = to_qp_idx(server_id);
+        // ML: what is the size of this sendbuf that gets returned??
+        // I feel like the size is simply max_msg_size_.
         return rdma_send_buf_[qp_idx] +
                psend_index_[qp_idx] * max_msg_size_;
     }
