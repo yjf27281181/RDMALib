@@ -253,8 +253,8 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     uint32_t length = stoi(instruction.substr(17));
     */
 
-    stringstream ss;
-    ss << instruction;
+    stringstream ss(instruction.c_str());
+    // ss << instruction;
     int supplierServerID;
     ss >> supplierServerID;
     uint64_t memAddr;
