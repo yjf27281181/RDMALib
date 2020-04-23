@@ -265,11 +265,12 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     uint32_t scid = nmm_->slabclassid(0, 40);
     char *readbuf = nmm_->ItemAlloc(0, scid);
     // try with local_offset = 0 (should be correct)
-    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, (uint64_t)stoi(memAddr), false);
+    // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, (uint64_t)stoi(memAddr), false);
 
-    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\", wr:{} imm:1", readbuf, wr_id);
+    // RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\", wr:{} imm:1", readbuf, wr_id);
+    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
 
-    broker_->FlushPendingSends(supplierServerID);
+    // broker_->FlushPendingSends(supplierServerID);
 }
 
 int main(int argc, char *argv[]) {
@@ -328,7 +329,7 @@ int main(int argc, char *argv[]) {
     uint32_t scid = mem_manager->slabclassid(0, 40);
     char *buf = mem_manager->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     // Do sth with the buf.
-    buf = "lmao this should fit\0";
+    buf = "nodata\0";
     // have another node read from here
     // TODO
 
