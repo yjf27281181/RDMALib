@@ -68,9 +68,14 @@ public:
 class ExampleRDMAThread {
 private:
     NovaMemManager *nmm;
+    NovaRDMARCBroker *broker;
+    P2MsgCallback *p2mc;
 public:
     ExampleRDMAThread(NovaMemManager*);
     void Start();
+
+    void ReceiveRDMAReadInstruction();
+    void ExecuteRDMARead(string instruction);
 
     RdmaCtrl *ctrl_;
     std::vector<QPEndPoint> endpoints_;
@@ -95,107 +100,22 @@ ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
 // node-1 should: 1. wait to RECV a msg from node-0 indication memory location,
 // 2. use RDMA READ to obtain data from that location 3. use SEND to signal
 // node-0 to free that memory.
-/*
 void ExampleRDMAThread::Start() {
 // A thread i at server j connects to thread i of all other servers.
-    // ML: for testing
-    assert(this->nmm != NULL);
-    NovaRDMARCBroker *broker = new NovaRDMARCBroker(circular_buffer_, 0,
-                                                    endpoints_,
-                                                    FLAGS_rdma_max_num_sends,
-                                                    FLAGS_rdma_max_msg_size,
-                                                    FLAGS_rdma_doorbell_batch_size,
-                                                    FLAGS_server_id,
-                                                    rdma_backing_mem_,
-                                                    FLAGS_mem_pool_size_gb *
-                                                    1024 *
-                                                    1024 * 1024,
-                                                    FLAGS_rdma_port,
-                                                    new P2MsgCallback);
-    broker->Init(ctrl_);
-
-    if (FLAGS_server_id == 0) { // ML: if we're node-0 (then our peer is node-1)
-        // Step 1- Register a memory block with NovaMemManager
-        uint32_t scid = nmm->slabclassid(0, 40);
-        char *bufStorage = nmm->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
-        // Step 2- Store something in the buf
-        bufStorage = "|- rdma read target data -|\0";
-        // Step 3- Figure out how to send bufStorage (the address it's pointing
-        // at) as a piece of information over RDMA Send
-
-        char *bufMsg = (char*)malloc(64 * sizeof(char)); // TODO remember to free!
-        // Verdict: this line above is causing the error! Must use ItemAlloc()
-        // char *bufMsg = nmm->ItemAlloc(0, scid); // reuse scid for a 40-byte-or-less message
-
-        // use ostringstream for storing memory address as a string, then
-        // converted to char array pointed at by char*, then send bufMsg over
-        // the wire
-        ostringstream oss;
-        oss << (void*)bufStorage; // oss should hold the ADDRESS of bufStorage
-        bufMsg = strdup(oss.str().c_str());
-        // cout << "bufMsg contains value: " << bufMsg << endl;
-        RDMA_LOG(INFO) << fmt::format("bufMsg contains value: {}", bufMsg);
-        RDMA_LOG(INFO) << fmt::format("bufMsg lives at: {}", (void*)bufMsg);
-        // result of line above:
-        // Mon Apr 20 04:36:16 2020, [nova_p2_main.cpp:106] bufMsg contains value: 0x47f8c8
-
-        // TODO now RDMASend() using bufMsg as the outgoing message buffer
-
-        // TODO after RDMASend(), maybe free bufMsg?
-
-        // TODO ideally have the other node notify upon finish reading
-
-        // TODO finally free bufStorage
-        // mem_manager->FreeItem(0, buf, scid);
-
-        // for some reason, hit "seg fault"
-        int server_id = 1;
-        char *sendbuf = broker->GetSendBuf(server_id);
-        // Write a request into the buf.
-        // sendbuf[0] = bufMsg[0];
-        // sendbuf[1] = bufMsg[1]; // this seems to work fine
-        sendbuf = "placeholder";
-        // *(sendbuf + 8) = *bufMsg;
-        uint64_t wr_id = broker->PostSend(sendbuf, 1, server_id, 1);
-        // RDMA_LOG(INFO) << fmt::format("send one byte 'a' wr:{} imm:1", wr_id);
-        RDMA_LOG(INFO) << fmt::format("send {} bytes wr:{} imm:1", strlen(sendbuf), wr_id);
-        broker->FlushPendingSends(server_id);
-        broker->PollSQ(server_id);
-        broker->PollRQ(server_id);
-    }
-    else {
-        // TODO if we're node-1
-        // int server_id = 0; // the peer we're working with
-        // broker->PollSQ(server_id);
-        // broker->PollRQ(server_id);
-        // ML: commented out since example_main doesn't have this; add later
-    }
-
-    while (true) {
-        // TODO: don't do anything yet
-        // broker->PollRQ();
-        // broker->PollSQ();
-    }
-}
-*/
-
-// let's first test a few things out. For instance, a longer string than 'a'.
-void ExampleRDMAThread::Start() {
-// A thread i at server j connects to thread i of all other servers.
-    P2MsgCallback *p2mc = new P2MsgCallback;
-    NovaRDMARCBroker *broker = new NovaRDMARCBroker(circular_buffer_, 0,
-                                                    endpoints_,
-                                                    FLAGS_rdma_max_num_sends,
-                                                    FLAGS_rdma_max_msg_size,
-                                                    FLAGS_rdma_doorbell_batch_size,
-                                                    FLAGS_server_id,
-                                                    rdma_backing_mem_,
-                                                    FLAGS_mem_pool_size_gb *
-                                                    1024 *
-                                                    1024 * 1024,
-                                                    FLAGS_rdma_port,
-                                                    p2mc);
-    broker->Init(ctrl_);
+    this->p2mc = new P2MsgCallback;
+    this->broker = new NovaRDMARCBroker(circular_buffer_, 0,
+                                        endpoints_,
+                                        FLAGS_rdma_max_num_sends,
+                                        FLAGS_rdma_max_msg_size,
+                                        FLAGS_rdma_doorbell_batch_size,
+                                        FLAGS_server_id,
+                                        rdma_backing_mem_,
+                                        FLAGS_mem_pool_size_gb *
+                                        1024 *
+                                        1024 * 1024,
+                                        FLAGS_rdma_port,
+                                        p2mc);
+    broker->Init(ctrl_); // let's see if this works
 
     if (FLAGS_server_id == 0) {
         // step 1- setup a memory block to store data item
@@ -204,7 +124,6 @@ void ExampleRDMAThread::Start() {
                                                  // 40 bytes" slab class
         // Do sth with the buf.
         databuf = "this is my data\0";
-
 
         int server_id = 1;
         char *sendbuf = broker->GetSendBuf(server_id); // DONE: check what's the
@@ -217,22 +136,18 @@ void ExampleRDMAThread::Start() {
                                                        // sufficient to hold the
                                                        // message.
 
-
         // Write a request into the buf.
-
-        // Goal: sendbuf{} = "P2GET 0 0x480f56 15"
+        // Goal: Request i.e. sendbuf = "P2GET 0 0x480f56 15"
         // ("COMMAND THIS_SERVER_ID MEM_ADDR LENGTH_TO_READ")
-        // DONE: Mind overflow! *sendbuf should hold 1024 bytes.
-
+        // Mind overflow! *sendbuf should hold 1024 bytes.
         // Part 1- COMMAND
         string thisPart = "P2GET";
         // use for loop to deep-copy
-        uint32_t j = 0; // add'l counter to concatenate all 4 parts of entire msg
+        size_t j = 0; // add'l counter to concatenate 4 parts of entire msg
         for (size_t i; i < thisPart.length(); i++) {
             sendbuf[j] = thisPart[i];
             j++;
         }
-        // j++;
         sendbuf[j] = ' ';
         j++; // point to the next empty space in sendbuf
         // Part 2- THIS_SERVER_ID
@@ -243,11 +158,9 @@ void ExampleRDMAThread::Start() {
             sendbuf[j] = thisPart[i];
             j++;
         }
-        // j++;
         sendbuf[j] = ' ';
         j++;
         // Part 3- MEM_ADDR
-        // use stringstream to store databuf's address
         stringstream ss2;
         ss2 << (void*)databuf;
         ss2 >> thisPart;
@@ -255,12 +168,10 @@ void ExampleRDMAThread::Start() {
             sendbuf[j] = thisPart[i];
             j++;
         }
-        // j++;
         sendbuf[j] = ' ';
         j++;
-        // DONE: everything above worked!
         // Part 4- LENGTH_TO_READ
-        size_t datalen = strlen(databuf); // TODO Verify correctness
+        size_t datalen = strlen(databuf);
         stringstream ss3;
         ss3 << datalen;
         ss3 >> thisPart;
@@ -268,25 +179,21 @@ void ExampleRDMAThread::Start() {
             sendbuf[j] = thisPart[i];
             j++;
         }
-        // Finished building message string.
+        // Finished building message string (sendbuf).
 
         uint64_t wr_id = broker->PostSend(sendbuf, strlen(sendbuf), server_id, 1);
         RDMA_LOG(INFO) << fmt::format("sendbuf \"{}\", wr:{} imm:1", sendbuf, wr_id);
         broker->FlushPendingSends(server_id);
-
-        // ML: in here, since broker has access to p2mc, it'll invoke this p2mc
-        // and run its only function, which is ProcessRDMAWC(). Now how do I get
-        // the char *buf available there, into right here? And remember I prefer
-        // NOT to touch the interface in nova_rdma_rc_broker.cpp. I think that
-        // may be too messy.
         broker->PollSQ(server_id);
         broker->PollRQ(server_id);
     }
 
     else { // should be node-1 executing this block
+        ReceiveRDMAReadInstruction();
         if (p2mc->recv_history.size() != 0) {
             RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history first element is \"{}\"", p2mc->recv_history[0]);
             p2mc->recv_history.pop_front();
+            initiate_read();
         }
 
     }
@@ -295,21 +202,24 @@ void ExampleRDMAThread::Start() {
         broker->PollRQ();
         broker->PollSQ();
         if (FLAGS_server_id == 1) {
-            string first_recv_msg = "";
+            string recv_msg = "";
             if (p2mc->recv_history.size() != 0) {
                 // The line below gets executed. Therefore, when node-1 actually
                 // receives message "0x48f...", it's already running in here.
                 RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, recv_history first element is \"{}\"", p2mc->recv_history[0]);
-                first_recv_msg = p2mc->recv_history[0];
+                recv_msg = p2mc->recv_history[0];
                 p2mc->recv_history.pop_front();
             }
             else {
                 continue; // do nothing when no message is received!
             }
-            // Here, first_recv_msg must have been populated.
-            // TODO: Initiate an RDMA READ operation to the location.
         }
     }
+}
+
+void ExampleRDMAThread::ReceiveRDMAReadInstruction() {
+    // if ()
+    // TODO
 }
 
 int main(int argc, char *argv[]) {
