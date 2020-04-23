@@ -193,7 +193,7 @@ void ExampleRDMAThread::Start() {
         if (p2mc->recv_history.size() != 0) {
             RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history first element is \"{}\"", p2mc->recv_history[0]);
             p2mc->recv_history.pop_front();
-            initiate_read();
+            // initiate_read();
         }
 
     }
