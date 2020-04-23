@@ -188,11 +188,11 @@ void ExampleRDMAThread::Start() {
 
     else { // should be node-1 executing this block
         ReceiveRDMAReadInstruction();
-        if (p2mc_->recv_history_.size() != 0) {
-            RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history_ first element is \"{}\"", p2mc_->recv_history_[0]);
-            p2mc_->recv_history_.pop_front();
-            // initiate_read();
-        }
+        // if (p2mc_->recv_history_.size() != 0) {
+        //     RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history_ first element is \"{}\"", p2mc_->recv_history_[0]);
+        //     p2mc_->recv_history_.pop_front();
+        //     // initiate_read();
+        // }
 
     }
 
@@ -200,17 +200,21 @@ void ExampleRDMAThread::Start() {
         broker_->PollRQ();
         broker_->PollSQ();
         if (FLAGS_server_id == 1) {
-            string recv_msg = "";
-            if (p2mc_->recv_history_.size() != 0) {
-                // The line below gets executed. Therefore, when node-1 actually
-                // receives message "0x48f...", it's already running in here.
-                RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, recv_history_ first element is \"{}\"", p2mc_->recv_history_[0]);
-                recv_msg = p2mc_->recv_history_[0];
-                p2mc_->recv_history_.pop_front();
-            }
-            else {
-                continue; // do nothing when no message is received!
-            }
+            // string recv_msg = "";
+            // if (p2mc_->recv_history_.size() != 0) {
+            //     // The line below gets executed. Therefore, when node-1 actually
+            //     // receives message "0x48f...", it's already running in here.
+            //     RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, recv_history_ first element is \"{}\"", p2mc_->recv_history_[0]);
+            //     recv_msg = p2mc_->recv_history_[0];
+            //     p2mc_->recv_history_.pop_front();
+            // }
+            // else {
+            //     continue; // do nothing when no message is received!
+            // }
+            ReceiveRDMAReadInstruction();
+        }
+        else {
+            continue; // do nothing if i'm node-0 (server 0)
         }
     }
 }
