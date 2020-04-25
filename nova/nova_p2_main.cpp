@@ -253,9 +253,9 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     uint32_t length = stoi(instruction.substr(17));
     */
 
-    // stringstream ss(instruction.c_str());
-    // RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): instruction.c_str(): {}", instruction.c_str());
-    stringstream ss; ss << instruction;
+    stringstream ss(instruction.c_str());
+    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): instruction.c_str(): {}", instruction.c_str());
+    // stringstream ss; ss << instruction;
 
     string command;
     ss >> command; // command gets "P2GET"
