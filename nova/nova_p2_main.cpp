@@ -42,9 +42,11 @@ DEFINE_uint32(nrdma_workers, 0,
 // ML: first step is to implement NovaMsgCallback interface
 class P2MsgCallback : public NovaMsgCallback {
 public:
+    P2MsgCallback();
 
     // used to record received message
     deque<string> recv_history_;
+    bool read_complete_;
 
     // TODO!!!!! figure out why an RDMA READ attempt result in receiving an
     // empty string in here...
@@ -60,18 +62,30 @@ public:
         }
         else if (type == IBV_WC_RDMA_READ) {
             RDMA_LOG(INFO) << fmt::format("OH FUCK YEAHH READ COMPLETED");
-
+            this->read_complete_ = true;
         }
         return true;
     }
-
 };
+
+P2MsgCallback::P2MsgCallback() {
+    this->read_complete_ = false; // initialize to false on construction
+}
+
+
+
+
+
+
+
+
 
 class ExampleRDMAThread {
 private:
     NovaMemManager *nmm_;
     NovaRDMARCBroker *broker_;
     P2MsgCallback *p2mc_;
+    char *readbuf_;
     // const uint32_t my_server_id_;
 
 public:
@@ -88,7 +102,9 @@ public:
 };
 
 ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
-    nmm_ = mem_manager;
+    // Setup memory manager upon construction; remaining components are set-up
+    // in Start().
+    this->nmm_ = mem_manager;
 }
 
 // ML: This is what i should mainly be editing. Let's dictate that node-0 wakes
@@ -105,8 +121,24 @@ ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
 // node-0 to free that memory.
 void ExampleRDMAThread::Start() {
 // A thread i at server j connects to thread i of all other servers.
-    p2mc_ = new P2MsgCallback;
-    broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
+
+    // Some setup work:
+
+    // Setup RDMA READ buffer, this is only useful for node-1 but we do it for
+    // all nodes anyway, for now.
+    // TODO how should I work with a reasonable slab size (like 40) without
+    // conflicting with the same buffer written into in main()?
+    uint32_t scid = nmm_->slabclassid(0, 2000); // using 2000 ( >> 40) results
+                                                // in a different slab class
+                                                // which doesn't collide with
+                                                // *readbuf from main()
+    this->readbuf_ = nmm_->ItemAlloc(0, scid);
+
+    // Setup message callback class interface
+    this->p2mc_ = new P2MsgCallback;
+
+    // Setup broker; this is mandatory!
+    this->broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
                                     endpoints_,
                                     FLAGS_rdma_max_num_sends,
                                     FLAGS_rdma_max_msg_size,
@@ -196,23 +228,24 @@ void ExampleRDMAThread::Start() {
         broker_->PollRQ(server_id);
     }
     else { // should be node-1 executing this block
-        ReceiveRDMAReadInstruction();
-        // if (p2mc_->recv_history_.size() != 0) {
-        //     RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 1, recv_history_ first element is \"{}\"", p2mc_->recv_history_[0]);
-        //     p2mc_->recv_history_.pop_front();
-        //     // initiate_read();
-        // }
-
+        ReceiveRDMAReadInstruction(); // Also, by now RECV haven't finished.
     }
 
     while (true) {
         broker_->PollRQ();
         broker_->PollSQ();
-        if (FLAGS_server_id == 0) { // force node-0 to do NOTHING
+        if (FLAGS_server_id == 0) {
             continue;
         }
-        else {
-            ReceiveRDMAReadInstruction();
+        else { // RECV should've completed somewhere within while(true)
+            if (p2mc_->read_complete_ == false) {
+                ReceiveRDMAReadInstruction();
+            }
+            else {
+                // TODO!!!!!! read complete is here; how do I obtain the buffer?
+                assert(readbuf_);
+                RDMA_LOG(INFO) << fmt::format("Finally received *readbuf_: \"{}\"", this->readbuf_);
+            }
         }
     }
 }
@@ -239,45 +272,21 @@ void ExampleRDMAThread::ReceiveRDMAReadInstruction() {
 
 void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // TODO how do I do sanity check?
+    // TODO faster (index-based) instruction argument parsing?
 
-    // I really need this to work FAST, hence hard-coded indexing
-    // NOTE: assume 1-digit server id
-    // instruction look like: "P2GET 0 0x480f56 15"
-    //                         [0    [6[8       [18
-    // ("COMMAND SUPPLIER_SERVER_ID MEM_ADDR LENGTH_TO_READ")
-    assert(instruction.substr(0, 5) == "P2GET"); // might remove to run faster
-
-    /*
-    // string supplierServerID = instruction.substr(6, 1);
-    int supplierServerID = stoi(instruction.substr(6, 1));
-    string memAddr = instruction.substr(8, 8);
-    // char memAddrCStr[] = memAddr.c_str(); // compiler complains since unknown size
-    char memAddrCStr[8];
-    strcpy(memAddrCStr, &memAddr[0]);
-    unsigned long int memAddrUL = strtoul(memAddrCStr, NULL, 16);
-    // string length = instruction.substr(17);  // this reads [17, end)
-    uint32_t length = stoi(instruction.substr(17));
-    */
+    assert(instruction.substr(0, 5) == "P2GET"); // TODO remove?
 
     // stringstream ss; ss << instruction; // both this and the line below works
     stringstream ss(instruction.c_str());
-    // RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): instruction.c_str(): {}", instruction.c_str());
 
     string command;
-    ss >> command; // command gets "P2GET"
-
+    ss >> command; // TODO command gets "P2GET", how to skip this?
     int supplierServerID;
-    // string supplierServerID;
     ss >> supplierServerID;
-
     uint64_t memAddr;
-    // string memAddr;
     ss >> memAddr;
-
     uint32_t length;
-    // string length;
     ss >> length;
-
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
 
     // TODO actually read
@@ -293,15 +302,8 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     //                   uint64_t local_offset,
     //                   uint64_t remote_addr, bool is_remote_offset);
 
-    // TODO how should I work with a reasonable slab size (like 40) without
-    // conflicting with the same buffer written into in main()?
-    uint32_t scid = nmm_->slabclassid(0, 2000); // using 2000 ( >> 40) results
-                                                // in a different slab class
-                                                // which doesn't collide with
-                                                // *readbuf from main()
-    char *readbuf = nmm_->ItemAlloc(0, scid);
-    // readbuf = "myass\0"; // writing into local read buffer will result in LOCAL PROTECTION ERROR on SERVER 0???
-    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
+    // readbuf_ = "myass\0"; // writing into local read buffer will result in LOCAL PROTECTION ERROR on SERVER 0???
+    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf_ before read: \"{}\"", readbuf_); // examine if readbuf_ contains stuff to begin with
     // try with local_offset = 0 (should be correct)
     // TODO trying with read size = 3
 
@@ -310,7 +312,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // [nova_rdma_rc_broker.cpp:328] Assertion! rdma-rc[0]: SQ error wc status 10 str:remote access error serverid 0
     // node-0 (read receiver)
     // [nova_rdma_rc_broker.cpp:379] Assertion! rdma-rc[0]: RQ error wc status Work Request Flushed Error
-    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, memAddr, true); // trying with "true" for is_remote_offset // TODO!!!! a very weird bug happened when is_offset set to true...
+    uint64_t wr_id = broker_->PostRead(readbuf_, length, supplierServerID, 0, memAddr, true); // trying with "true" for is_remote_offset // TODO!!!! a very weird bug happened when is_offset set to true...
 
     // TODO!! there is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
@@ -320,8 +322,8 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
 
     // this line below is VERY problematic! Basically when hitting this line,
     // RDMA READ is NOT YET complete! Only when msgCallback is hit, that means
-    // this readbuf should be populated!
-    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf right after read attempt \"{}\", wr:{} imm:1", readbuf, wr_id);
+    // this readbuf_ should be populated!
+    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf_ right after read attempt \"{}\", wr:{} imm:1", readbuf_, wr_id);
 
     // TODO do i need the line below?
     broker_->FlushPendingSends(supplierServerID);
