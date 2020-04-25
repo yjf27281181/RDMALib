@@ -186,7 +186,6 @@ void ExampleRDMAThread::Start() {
         broker_->PollSQ(server_id);
         broker_->PollRQ(server_id);
     }
-
     else { // should be node-1 executing this block
         ReceiveRDMAReadInstruction();
         // if (p2mc_->recv_history_.size() != 0) {
@@ -198,9 +197,13 @@ void ExampleRDMAThread::Start() {
     }
 
     while (true) {
-        broker_->PollRQ();
-        broker_->PollSQ();
-        if (FLAGS_server_id == 1) {
+        if (FLAGS_server_id == 0) { // force node-0 to do NOTHING
+            continue;
+        }
+        else {
+            broker_->PollRQ();
+            broker_->PollSQ();
+        // if (FLAGS_server_id == 1) {
             // string recv_msg = "";
             // if (p2mc_->recv_history_.size() != 0) {
             //     // The line below gets executed. Therefore, when node-1 actually
@@ -223,15 +226,20 @@ void ExampleRDMAThread::Start() {
 void ExampleRDMAThread::ReceiveRDMAReadInstruction() {
     assert(FLAGS_server_id == 1); // let upper level ensure this
     if (p2mc_->recv_history_.size() != 0) {
+        // if (p2mc_->recv_history.size() == 1 && p2mc_->recv_history_[0].length() == 0) {
+        //     return;
+        // }
         string recvMsg = p2mc_->recv_history_[0];
         RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, popping recv_history_[0]: \"{}\"", recvMsg);
+        p2mc_->recv_history_.pop_front();
         if (recvMsg.substr(0, 5) != "P2GET") {
             RDMA_LOG(INFO) << fmt::format("Weird recv_history_[0] content: \"{}\"", recvMsg);
             return;
         }
-        p2mc_->recv_history_.pop_front();
-        // Now initiate the RDMA read operation, using recvMsg as instruction
-        ExecuteRDMARead(recvMsg);
+        else {
+            // with a recvMsg starting with "P2GET", initiate RDMA read
+            ExecuteRDMARead(recvMsg);
+        }
     }
 }
 
