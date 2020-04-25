@@ -124,8 +124,8 @@ void ExampleRDMAThread::Start() {
                                                   // 40 bytes" slab class
         // Do sth with the buf.
         databuf[0] = 'L';
-        databuf[1] = 'O';
-        databuf[2] = 'L';
+        // databuf[1] = 'O';
+        // databuf[2] = 'L';
         // databuf[3] = '\0';
 
         int server_id = 1;
