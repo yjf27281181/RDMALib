@@ -46,6 +46,8 @@ public:
     // used to record received message
     deque<string> recv_history_;
 
+    // TODO!!!!! figure out why an RDMA READ attempt result in receiving an
+    // empty string in here...
     bool
     ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
                   char *buf, uint32_t imm_data) override {
@@ -121,7 +123,10 @@ void ExampleRDMAThread::Start() {
         char *databuf = nmm_->ItemAlloc(0, scid); // allocate an item of "size =
                                                   // 40 bytes" slab class
         // Do sth with the buf.
-        databuf = "this is my data\0";
+        databuf[0] = 'L';
+        databuf[1] = 'O';
+        databuf[2] = 'L';
+        databuf[3] = '\0';
 
         int server_id = 1;
         char *sendbuf = broker_->GetSendBuf(server_id);// DONE: check what's the
