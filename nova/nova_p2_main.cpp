@@ -58,7 +58,7 @@ public:
         if (type == IBV_WC_RECV) { // TODO needs fixing
             this->recv_history_.push_back(bufContent);
         }
-        elif (type == IBV_WC_READ) {
+        else if (type == IBV_WC_READ) {
             RDMA_LOG(INFO) << fmt::format("OH FUCK YEAHH READ COMPLETED");
 
         }
