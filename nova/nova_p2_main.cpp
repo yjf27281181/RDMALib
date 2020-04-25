@@ -257,15 +257,21 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): instruction.c_str(): {}", instruction.c_str());
     stringstream ss; ss << instruction;
 
-    // int supplierServerID;
-    string supplierServerID;
+    string command;
+    ss >> command; // command gets "P2GET"
+
+    int supplierServerID;
+    // string supplierServerID;
     ss >> supplierServerID;
-    // uint64_t memAddr;
-    string memAddr;
+
+    uint64_t memAddr;
+    // string memAddr;
     ss >> memAddr;
-    // uint32_t length;
-    string length;
+
+    uint32_t length;
+    // string length;
     ss >> length;
+
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
 
 
