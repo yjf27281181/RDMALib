@@ -300,7 +300,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
                                                 // which doesn't collide with
                                                 // *readbuf from main()
     char *readbuf = nmm_->ItemAlloc(0, scid);
-    readbuf = "myass\0";
+    // readbuf = "myass\0"; // writing into local read buffer will result in LOCAL PROTECTION ERROR on SERVER 0???
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
     // try with local_offset = 0 (should be correct)
     // TODO trying with read size = 3
