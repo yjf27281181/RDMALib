@@ -254,6 +254,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     */
 
     stringstream ss(instruction.c_str());
+    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): instruction.c_str(): {}", instruction.c_str());
     // ss << instruction;
     int supplierServerID;
     ss >> supplierServerID;
