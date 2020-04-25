@@ -274,53 +274,46 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
 
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
 
-
-
-
-    // RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
-    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, stoi(mem_addr): {}, length: {}", supplierServerID, stoi(memAddr), length);
-
     // TODO actually read
 
     // RDMA Read might work with a memory region that is NOT registerd with RNIC
     // but I'm not sure. To be safe, start with RNIC-registered block, but later
     // on try good o' malloc() to see if I can reduce RNIC-registered memory
     // usage.
-
     // Additionally, instead of using broker_->GetSendBuf(), try ItemAlloc()
     // first.
-
 
     // uint64_t PostRead(char *localbuf, uint32_t size, int remote_server_id,
     //                   uint64_t local_offset,
     //                   uint64_t remote_addr, bool is_remote_offset);
 
+    // TODO how should I work with a reasonable slab size (like 40) without
+    // conflicting with the same buffer written into in main()?
     uint32_t scid = nmm_->slabclassid(0, 2000); // using 2000 ( >> 40) results
                                                 // in a different slab class
                                                 // which doesn't collide with
                                                 // *readbuf from main()
     char *readbuf = nmm_->ItemAlloc(0, scid);
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
-    RDMA_LOG(INFO) << fmt::format("Attempting to read from: \"{}\"", memAddr); // examine if readbuf contains stuff to begin with
     // try with local_offset = 0 (should be correct)
-    // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, (reinterpret_cast<char*>(memAddr)), false);
+    // TODO trying with read size = 3
 
-    // TODO!!! for some reason the line below keeps erroring out with:
+    // TODO for some reason the line below keeps erroring out with:
     // node-1 (read initiator)
     // [nova_rdma_rc_broker.cpp:328] Assertion! rdma-rc[0]: SQ error wc status 10 str:remote access error serverid 0
     // node-0 (read receiver)
     // [nova_rdma_rc_broker.cpp:379] Assertion! rdma-rc[0]: RQ error wc status Work Request Flushed Error
-
     uint64_t wr_id = broker_->PostRead(readbuf, 3, supplierServerID, 0, memAddr, false);
 
     // TODO!! there is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
     // from the very beginning, with some format-specified printing in RDMA_LOG
-    // should make things work.
+    // should make things work. Update: Haoyu said simply cast to uint64_t from
+    // the very beginning, where node-0 constructs char *sendbuf
 
-    // RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf \"{}\", wr:{} imm:1", readbuf, wr_id);
+    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf after read attempt \"{}\", wr:{} imm:1", readbuf, wr_id);
 
-
+    // TODO do i need the line below?
     // broker_->FlushPendingSends(supplierServerID);
 }
 
