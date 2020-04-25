@@ -253,9 +253,9 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     uint32_t length = stoi(instruction.substr(17));
     */
 
+    // stringstream ss; ss << instruction; // both this and the line below works
     stringstream ss(instruction.c_str());
-    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): instruction.c_str(): {}", instruction.c_str());
-    // stringstream ss; ss << instruction;
+    // RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): instruction.c_str(): {}", instruction.c_str());
 
     string command;
     ss >> command; // command gets "P2GET"
@@ -277,7 +277,6 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
 
 
 
-    /*
     // RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, stoi(mem_addr): {}, length: {}", supplierServerID, stoi(memAddr), length);
 
@@ -302,7 +301,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
                                                 // *readbuf from main()
     char *readbuf = nmm_->ItemAlloc(0, scid);
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
-    RDMA_LOG(INFO) << fmt::format("Attempting to read from: \"{}\"", (uint64_t)memAddrUL); // examine if readbuf contains stuff to begin with
+    RDMA_LOG(INFO) << fmt::format("Attempting to read from: \"{}\"", memAddr); // examine if readbuf contains stuff to begin with
     // try with local_offset = 0 (should be correct)
     // uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, (reinterpret_cast<char*>(memAddr)), false);
 
@@ -312,7 +311,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // node-0 (read receiver)
     // [nova_rdma_rc_broker.cpp:379] Assertion! rdma-rc[0]: RQ error wc status Work Request Flushed Error
 
-    uint64_t wr_id = broker_->PostRead(readbuf, 3, supplierServerID, 0, (uint64_t)memAddrUL, false);
+    uint64_t wr_id = broker_->PostRead(readbuf, 3, supplierServerID, 0, memAddr, false);
 
     // TODO!! there is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
@@ -323,7 +322,6 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
 
 
     // broker_->FlushPendingSends(supplierServerID);
-    */
 }
 
 int main(int argc, char *argv[]) {
