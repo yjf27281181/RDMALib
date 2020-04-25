@@ -123,10 +123,11 @@ void ExampleRDMAThread::Start() {
         char *databuf = nmm_->ItemAlloc(0, scid); // allocate an item of "size =
                                                   // 40 bytes" slab class
         // Do sth with the buf.
-        databuf[0] = 'L';
+        // databuf[0] = 'L';
         // databuf[1] = 'O';
         // databuf[2] = 'L';
         // databuf[3] = '\0';
+        databuf = "x";
 
         int server_id = 1;
         char *sendbuf = broker_->GetSendBuf(server_id);// DONE: check what's the
