@@ -55,9 +55,12 @@ public:
         RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:\"{}\" imm:{}",
                                       ibv_wc_opcode_str(type), wr_id,
                                       remote_server_id, bufContent, imm_data);
-        // if (type == IBV_WC_RECV) { // TODO needs fixing
-        if (true) {
+        if (type == IBV_WC_RECV) { // TODO needs fixing
             this->recv_history_.push_back(bufContent);
+        }
+        elif (type == IBV_WC_READ) {
+            RDMA_LOG(INFO) << fmt::format("OH FUCK YEAHH READ COMPLETED");
+
         }
         return true;
     }
@@ -297,6 +300,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
                                                 // which doesn't collide with
                                                 // *readbuf from main()
     char *readbuf = nmm_->ItemAlloc(0, scid);
+    readbuf = "myass\0";
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf before read: \"{}\"", readbuf); // examine if readbuf contains stuff to begin with
     // try with local_offset = 0 (should be correct)
     // TODO trying with read size = 3
@@ -306,7 +310,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // [nova_rdma_rc_broker.cpp:328] Assertion! rdma-rc[0]: SQ error wc status 10 str:remote access error serverid 0
     // node-0 (read receiver)
     // [nova_rdma_rc_broker.cpp:379] Assertion! rdma-rc[0]: RQ error wc status Work Request Flushed Error
-    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 0, memAddr, true); // trying with "true" for is_remote_offset // TODO!!!! a very weird bug happened when is_offset set to true...
+    uint64_t wr_id = broker_->PostRead(readbuf, length, supplierServerID, 2, memAddr, true); // trying with "true" for is_remote_offset // TODO!!!! a very weird bug happened when is_offset set to true...
 
     // TODO!! there is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
@@ -314,7 +318,10 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // should make things work. Update: Haoyu said simply cast to uint64_t from
     // the very beginning, where node-0 constructs char *sendbuf
 
-    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf after read attempt \"{}\", wr:{} imm:1", readbuf, wr_id);
+    // this line below is VERY problematic! Basically when hitting this line,
+    // RDMA READ is NOT YET complete! Only when msgCallback is hit, that means
+    // this readbuf should be populated!
+    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf right after read attempt \"{}\", wr:{} imm:1", readbuf, wr_id);
 
     // TODO do i need the line below?
     broker_->FlushPendingSends(supplierServerID);
