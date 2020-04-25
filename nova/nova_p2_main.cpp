@@ -307,7 +307,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // [nova_rdma_rc_broker.cpp:328] Assertion! rdma-rc[0]: SQ error wc status 10 str:remote access error serverid 0
     // node-0 (read receiver)
     // [nova_rdma_rc_broker.cpp:379] Assertion! rdma-rc[0]: RQ error wc status Work Request Flushed Error
-    uint64_t wr_id = broker_->PostRead(readbuf, 3, supplierServerID, 0, memAddr, true); // trying with "true" for is_remote_offset
+    uint64_t wr_id = broker_->PostRead(readbuf, 3, supplierServerID, 0, memAddr, false); // trying with "true" for is_remote_offset // TODO!!!! a very weird bug happened when is_offset set to true...
 
     // TODO!! there is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
@@ -318,7 +318,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf after read attempt \"{}\", wr:{} imm:1", readbuf, wr_id);
 
     // TODO do i need the line below?
-    // broker_->FlushPendingSends(supplierServerID);
+    broker_->FlushPendingSends(supplierServerID);
 }
 
 int main(int argc, char *argv[]) {
