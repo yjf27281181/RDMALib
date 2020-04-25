@@ -243,6 +243,7 @@ void ExampleRDMAThread::Start() {
             }
             else {
                 // TODO!!!!!! read complete is here; how do I obtain the buffer?
+                p2mc->read_complete_ = false; // suppress
                 assert(readbuf_);
                 RDMA_LOG(INFO) << fmt::format("Finally received *readbuf_: \"{}\"", this->readbuf_);
             }
