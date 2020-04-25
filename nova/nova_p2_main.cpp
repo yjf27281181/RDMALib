@@ -61,7 +61,7 @@ public:
             this->recv_history_.push_back(bufContent);
         }
         else if (type == IBV_WC_RDMA_READ) {
-            RDMA_LOG(INFO) << fmt::format("OH FUCK YEAHH READ COMPLETED");
+            RDMA_LOG(INFO) << fmt::format("OH FUCK YEAHH READ COMPLETED, buf:{}", bufContent);
             this->read_complete_ = true;
         }
         return true;
