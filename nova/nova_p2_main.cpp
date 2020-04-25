@@ -225,6 +225,10 @@ void ExampleRDMAThread::ReceiveRDMAReadInstruction() {
     if (p2mc_->recv_history_.size() != 0) {
         string recvMsg = p2mc_->recv_history_[0];
         RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, popping recv_history_[0]: \"{}\"", recvMsg);
+        if (recvMsg.substr(0, 5) != "P2GET") {
+            RDMA_LOG(INFO) << fmt::format("Weird recv_history_[0] content: \"{}\"", recvMsg);
+            return;
+        }
         p2mc_->recv_history_.pop_front();
         // Now initiate the RDMA read operation, using recvMsg as instruction
         ExecuteRDMARead(recvMsg);
