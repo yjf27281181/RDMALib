@@ -390,7 +390,8 @@ int main(int argc, char *argv[]) {
     // buf[2] = 'd';
     // buf[3] = 't';
     // buf[4] = '\0';
-    *buf = "what";
+    // *buf = "what";
+    strcpy(buf, "what");
     // TODO have the other node notify upon finish reading
 
     // finally free it
