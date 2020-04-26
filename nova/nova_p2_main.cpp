@@ -310,7 +310,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // try with local_offset = 0 (should be correct)
     // TODO fiddle with read size = 3
 
-    uint64_t wr_id = broker_->PostRead(readbuf_, length, supplierServerID, 0, memAddr, true); // trying with "true" for is_remote_offset
+    uint64_t wr_id = broker_->PostRead(readbuf_, length, supplierServerID, 0, memAddr, false); // trying with "true" for is_remote_offset
 
     // There is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
