@@ -210,7 +210,7 @@ void ExampleRDMAThread::Start() {
         }
         // TODO!!!!!!!!!!! memcpy(); increment j accordingly
         // memcpy(sendbuf[j], (uint64_t)databuf, sizeof(uint64_t));
-        j += (sizeof(uint64_t)/sizeof(char));
+        // j += (sizeof(uint64_t)/sizeof(char));
         sendbuf[j] = ' ';
         j++;
         // Part 4- LENGTH_TO_READ
