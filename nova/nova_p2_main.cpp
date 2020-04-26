@@ -201,6 +201,7 @@ void ExampleRDMAThread::Start() {
         sendbuf[j] = ' ';
         j++;
         // Part 3- MEM_ADDR // TODO!!!!!!!! try using memcpy()
+        /*
         stringstream ss2;
         ss2 << (uint64_t)databuf;
         ss2 >> thisPart;
@@ -208,6 +209,10 @@ void ExampleRDMAThread::Start() {
             sendbuf[j] = thisPart[i];
             j++;
         }
+        */
+        // TODO!!!!!!!!!!! memcpy(); increment j accordingly
+        memcpy(sendbuf[j], (uint64_t)databuf, sizeof(uint64_t));
+        j += (sizeof(uint64_t)/sizeof(char));
         sendbuf[j] = ' ';
         j++;
         // Part 4- LENGTH_TO_READ
