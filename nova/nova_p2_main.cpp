@@ -163,7 +163,7 @@ void ExampleRDMAThread::Start() {
         // databuf[1] = 'O';
         // databuf[2] = 'L';
         // databuf[3] = '\0';
-        *databuf[0] = "x";
+        *databuf = 'x';
 
         int server_id = 1;
         char *sendbuf = broker_->GetSendBuf(server_id);// DONE: check what's the
@@ -385,8 +385,11 @@ int main(int argc, char *argv[]) {
     uint32_t scid = mem_manager->slabclassid(0, 40);
     char *buf = mem_manager->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     // Do sth with the buf.
-    *buf = "nodata\0";
-
+    buf[0] = 'n';
+    buf[1] = 'o';
+    buf[2] = 'd';
+    buf[3] = 't';
+    buf[4] = '\0';
     // TODO have the other node notify upon finish reading
 
     // finally free it
