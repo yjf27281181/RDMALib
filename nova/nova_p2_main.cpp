@@ -163,7 +163,7 @@ void ExampleRDMAThread::Start() {
         // databuf[1] = 'O';
         // databuf[2] = 'L';
         // databuf[3] = '\0';
-        *databuf = 'x';
+        // *databuf = 'x';
 
         int server_id = 1;
         char *sendbuf = broker_->GetSendBuf(server_id);// DONE: check what's the
