@@ -48,7 +48,7 @@ public:
     deque<string> recv_history_;
     bool read_complete_;
 
-    // TODO!!!!! figure out why an RDMA READ attempt result in receiving an
+    // TODO! figure out why an RDMA READ attempt result in receiving an
     // empty string in here...
     bool
     ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
@@ -57,12 +57,13 @@ public:
         RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:\"{}\" imm:{}",
                                       ibv_wc_opcode_str(type), wr_id,
                                       remote_server_id, bufContent, imm_data);
-        if (type == IBV_WC_RECV) { // TODO needs fixing
+        if (type == IBV_WC_RECV) {
             this->recv_history_.push_back(bufContent);
         }
         else if (type == IBV_WC_RDMA_READ) {
-            RDMA_LOG(INFO) << fmt::format("OH FUCK YEAHH READ COMPLETED, buf:{}", bufContent);
+            RDMA_LOG(INFO) << fmt::format("OH FUCK YEAHH READ COMPLETED, buf:\"{}\"", bufContent);
             this->read_complete_ = true;
+            // TODO! WHY THE FUCK CAN'T I JUST GET THE READ DATA ALREADY??
         }
         return true;
     }
@@ -199,9 +200,8 @@ void ExampleRDMAThread::Start() {
         }
         sendbuf[j] = ' ';
         j++;
-        // Part 3- MEM_ADDR
+        // Part 3- MEM_ADDR // TODO!!!!!!!! try using memcpy()
         stringstream ss2;
-        // ss2 << (void*)databuf; // TODO!!!!
         ss2 << (uint64_t)databuf;
         ss2 >> thisPart;
         for (size_t i; i < thisPart.length(); i++) {
@@ -242,7 +242,6 @@ void ExampleRDMAThread::Start() {
                 ReceiveRDMAReadInstruction();
             }
             else {
-                // TODO!!!!!! read complete is here; how do I obtain the buffer?
                 p2mc_->read_complete_ = false; // suppress
                 assert(readbuf_);
                 RDMA_LOG(INFO) << fmt::format("Finally received *readbuf_: \"{}\"", this->readbuf_);
@@ -290,7 +289,7 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     ss >> length;
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
 
-    // TODO actually read
+    // DONE: initiate RDMA READ
 
     // RDMA Read might work with a memory region that is NOT registerd with RNIC
     // but I'm not sure. To be safe, start with RNIC-registered block, but later
@@ -306,20 +305,17 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // readbuf_ = "myass\0"; // writing into local read buffer will result in LOCAL PROTECTION ERROR on SERVER 0???
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf_ before read: \"{}\"", readbuf_); // examine if readbuf_ contains stuff to begin with
     // try with local_offset = 0 (should be correct)
-    // TODO trying with read size = 3
+    // TODO fiddle with read size = 3
 
-    // TODO for some reason the line below keeps erroring out with:
-    // node-1 (read initiator)
-    // [nova_rdma_rc_broker.cpp:328] Assertion! rdma-rc[0]: SQ error wc status 10 str:remote access error serverid 0
-    // node-0 (read receiver)
-    // [nova_rdma_rc_broker.cpp:379] Assertion! rdma-rc[0]: RQ error wc status Work Request Flushed Error
-    uint64_t wr_id = broker_->PostRead(readbuf_, length, supplierServerID, 0, memAddr, true); // trying with "true" for is_remote_offset // TODO!!!! a very weird bug happened when is_offset set to true...
+    uint64_t wr_id = broker_->PostRead(readbuf_, length, supplierServerID, 0, memAddr, true); // trying with "true" for is_remote_offset
 
-    // TODO!! there is no elegant way to convert remote server memory addresses
+    // There is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
     // from the very beginning, with some format-specified printing in RDMA_LOG
     // should make things work. Update: Haoyu said simply cast to uint64_t from
     // the very beginning, where node-0 constructs char *sendbuf
+    // Update 2: not just simply cast to uint64_t after RECV, but also store
+    // node-0's message as uint64_t for memAddr. memcpy().
 
     // this line below is VERY problematic! Basically when hitting this line,
     // RDMA READ is NOT YET complete! Only when msgCallback is hit, that means
@@ -354,8 +350,8 @@ int main(int argc, char *argv[]) {
     NovaConfig::config->servers = hosts;
     NovaConfig::config->rdma_port = FLAGS_rdma_port;
     NovaConfig::config->rdma_doorbell_batch_size = FLAGS_rdma_doorbell_batch_size;
-    NovaConfig::config->max_msg_size = FLAGS_rdma_max_msg_size;                                                         // ML: set to 1024
-    NovaConfig::config->rdma_max_num_sends = FLAGS_rdma_max_num_sends;                                                  // ML: set to 128 in command-line execution
+    NovaConfig::config->max_msg_size = FLAGS_rdma_max_msg_size;                 // ML: set to 1024
+    NovaConfig::config->rdma_max_num_sends = FLAGS_rdma_max_num_sends;          // ML: set to 128 in command-line execution
 
     RdmaCtrl *ctrl = new RdmaCtrl(FLAGS_server_id, FLAGS_rdma_port);
     std::vector<QPEndPoint> endpoints;
@@ -387,11 +383,8 @@ int main(int argc, char *argv[]) {
     char *buf = mem_manager->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     // Do sth with the buf.
     buf = "nodata\0";
-    // have another node read from here
-    // TODO
 
-    // ideally have the other node notify upon finish reading
-    // TODO
+    // TODO have the other node notify upon finish reading
 
     // finally free it
     mem_manager->FreeItem(0, buf, scid);
