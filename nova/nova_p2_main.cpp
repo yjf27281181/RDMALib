@@ -385,11 +385,12 @@ int main(int argc, char *argv[]) {
     uint32_t scid = mem_manager->slabclassid(0, 40);
     char *buf = mem_manager->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     // Do sth with the buf.
-    buf[0] = 'n';
-    buf[1] = 'o';
-    buf[2] = 'd';
-    buf[3] = 't';
-    buf[4] = '\0';
+    // buf[0] = 'n';
+    // buf[1] = 'o';
+    // buf[2] = 'd';
+    // buf[3] = 't';
+    // buf[4] = '\0';
+    *buf = "what";
     // TODO have the other node notify upon finish reading
 
     // finally free it
