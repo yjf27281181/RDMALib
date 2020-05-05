@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <csignal>
 #include <gflags/gflags.h>
+#include <boost/lexical_cast.hpp>
 
 #include <sstream> // ML: for saving memory address (pointed-to) as a string, so it can be send over RDMA
 
@@ -90,7 +91,7 @@ P2MsgCallback::P2MsgCallback() {
 class RDMAManager {
 public:
 	RDMAManager(NovaMemManager *mem_manager);
-	string writeContentToRDMA(string content);
+	string writeContentToRDMA(char* content);
 	string readContentFromRDMA(string instruction);
 	RdmaCtrl *ctrl_;
     std::vector<QPEndPoint> endpoints_;
@@ -100,7 +101,7 @@ private:
 	NovaMemManager *nmm_;
     NovaRDMARCBroker *broker_;
     char *readbuf_;
-}
+};
 
 RDMAManager::RDMAManager(NovaMemManager *mem_manager) {
 	this->nmm_ = mem_manager;
@@ -117,7 +118,7 @@ RDMAManager::RDMAManager(NovaMemManager *mem_manager) {
                                     1024 *
                                     1024 * 1024,
                                     FLAGS_rdma_port,
-                                    p2mc_);
+                                    NULL);
 
 }
 
@@ -153,20 +154,20 @@ string RDMAManager::readContentFromRDMA(string instruction) {
     return string(readbuf_);
 }
 
-string RDMAManager::writeContentToRDMA(string content) {
+string RDMAManager::writeContentToRDMA(char* content) {
 
-	uint32_t scid = mem_manager->slabclassid(0, 200);
-    char *buf = mem_manager->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
+	uint32_t scid = nmm_->slabclassid(0, 200);
+    char *buf = nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     strcpy(buf, content);
     // finally free it
-    mem_manager->FreeItem(0, buf, scid);
+    nmm_->FreeItem(0, buf, scid);
     string instruction = "P2GET";
     instruction += " ";
     instruction += std::to_string(FLAGS_server_id);
     instruction += " ";
     instruction += boost::lexical_cast<std::string>(val);
     instruction += " ";
-    instruction += std::to_string(strlen(databuf));
+    instruction += std::to_string(strlen(content));
     return instruction;
 }
 
@@ -235,7 +236,7 @@ int main(int argc, char *argv[]) {
     rdmaManager->ctrl_ = ctrl;
     rdmaManager->endpoints_ = endpoints;
     rdmaManager->rdma_backing_mem_ = rdma_backing_mem;
-    string instruction = rdmaManager.writeContentToRDMA("test write function");
+    string instruction = rdmaManager->writeContentToRDMA("test write function");
     RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
     return 0;
 }
