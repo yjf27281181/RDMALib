@@ -119,7 +119,9 @@ RDMAManager::RDMAManager(NovaMemManager *mem_manager) {
                                     1024 * 1024,
                                     FLAGS_rdma_port,
                                     NULL);
+    RDMA_LOG(INFO) << fmt::format("start initial broker");
     broker_->Init(ctrl_);
+    RDMA_LOG(INFO) << fmt::format("end initial broker");
 
 }
 
