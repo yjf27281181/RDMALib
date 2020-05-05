@@ -239,5 +239,7 @@ int main(int argc, char *argv[]) {
     char content[] = "Hello"; 
     string instruction = rdmaManager->writeContentToRDMA(content);
     RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
+    string contentFromRDMA = rdmaManager->readContentFromRDMA(instruction);
+    RDMA_LOG(INFO) << fmt::format("main(): content {}", contentFromRDMA);
     return 0;
 }
