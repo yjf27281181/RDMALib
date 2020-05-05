@@ -61,7 +61,7 @@ public:
             this->recv_history_.push_back(bufContent);
         }
         else if (type == IBV_WC_RDMA_READ) {
-            RDMA_LOG(INFO) << fmt::format("OH FUCK YEAHH READ COMPLETED, buf:\"{}\"", bufContent);
+            RDMA_LOG(INFO) << fmt::format(" READ COMPLETED, buf:\"{}\"", bufContent);
             this->read_complete_ = true;
             // TODO! WHY THE FUCK CAN'T I JUST GET THE READ DATA ALREADY??
         }
@@ -75,39 +75,6 @@ P2MsgCallback::P2MsgCallback() {
 
 
 
-
-
-
-
-
-
-class ExampleRDMAThread {
-private:
-    NovaMemManager *nmm_;
-    NovaRDMARCBroker *broker_;
-    P2MsgCallback *p2mc_;
-    char *readbuf_;
-    // const uint32_t my_server_id_;
-
-public:
-    ExampleRDMAThread(NovaMemManager*);
-    void Start();
-
-    void ReceiveRDMAReadInstruction();
-    void ExecuteRDMARead(string instruction);
-
-    RdmaCtrl *ctrl_;
-    std::vector<QPEndPoint> endpoints_;
-    char *rdma_backing_mem_;
-    char *circular_buffer_;
-};
-
-ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
-    // Setup memory manager upon construction; remaining components are set-up
-    // in Start().
-    this->nmm_ = mem_manager;
-}
-
 // ML: This is what i should mainly be editing. Let's dictate that node-0 wakes
 // up to write some naive data in a known location (or that location can be
 // obtained and sent to node-1 at run time). Then, run the same code on node-1
@@ -120,25 +87,25 @@ ExampleRDMAThread::ExampleRDMAThread(NovaMemManager *mem_manager) {
 // node-1 should: 1. wait to RECV a msg from node-0 indication memory location,
 // 2. use RDMA READ to obtain data from that location 3. use SEND to signal
 // node-0 to free that memory.
-void ExampleRDMAThread::Start() {
-// A thread i at server j connects to thread i of all other servers.
+class RDMAManager() {
+public:
+	RDMAManager(NovaMemManager *mem_manager);
+	string writeContentToRDMA(string content);
+	string readContentFromRDMA(string instruction);
+	RdmaCtrl *ctrl_;
+    std::vector<QPEndPoint> endpoints_;
+    char *rdma_backing_mem_;
+    char *circular_buffer_;
+private:
+	NovaMemManager *nmm_;
+    NovaRDMARCBroker *broker_;
+    char *readbuf_;
+}
 
-    // Some setup work:
-
-    // Setup RDMA READ buffer, this is only useful for node-1 but we do it for
-    // all nodes anyway, for now.
-    // TODO how should I work with a reasonable slab size (like 40) without
-    // conflicting with the same buffer written into in main()?
-    uint32_t scid = nmm_->slabclassid(0, 2000); // using 2000 ( >> 40) results
-                                                // in a different slab class
-                                                // which doesn't collide with
-                                                // *readbuf from main()
+RDMAManager::RDMAManager(NovaMemManager *mem_manager) {
+	this->nmm_ = mem_manager;
+	uint32_t scid = nmm_->slabclassid(0, 2000); // using 2000 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
     this->readbuf_ = nmm_->ItemAlloc(0, scid);
-
-    // Setup message callback class interface
-    this->p2mc_ = new P2MsgCallback;
-
-    // Setup broker; this is mandatory!
     this->broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
                                     endpoints_,
                                     FLAGS_rdma_max_num_sends,
@@ -151,137 +118,15 @@ void ExampleRDMAThread::Start() {
                                     1024 * 1024,
                                     FLAGS_rdma_port,
                                     p2mc_);
-    broker_->Init(ctrl_);
 
-    if (FLAGS_server_id == 0) {
-        // step 1- setup a memory block to store data item
-        uint32_t scid = nmm_->slabclassid(0, 40);
-        char *databuf = nmm_->ItemAlloc(0, scid); // allocate an item of "size =
-                                                  // 40 bytes" slab class
-        // Do sth with the buf.
-        // databuf[0] = 'L';
-        // databuf[1] = 'O';
-        // databuf[2] = 'L';
-        // databuf[3] = '\0';
-        // *databuf = 'x';
-
-        int server_id = 1;
-        char *sendbuf = broker_->GetSendBuf(server_id);// DONE: check what's the
-                                                       // size of this message
-                                                       // buffer. Data buffer is
-                                                       // clearly 40-bytes.
-                                                       // Seems it's set in cmd-
-                                                       // line args, and it's
-                                                       // 1024 bytes. Should be
-                                                       // sufficient to hold the
-                                                       // message.
-
-        // Write a request into the buf.
-        // Goal: Request i.e. sendbuf = "P2GET 0 0x480f56 15"
-        // ("COMMAND THIS_SERVER_ID MEM_ADDR LENGTH_TO_READ")
-        // Mind overflow! *sendbuf should hold 1024 bytes.
-        // Part 1- COMMAND
-        string thisPart = "P2GET";
-        // use for loop to deep-copy
-        size_t j = 0; // add'l counter to concatenate 4 parts of entire msg
-        for (size_t i; i < thisPart.length(); i++) {
-            sendbuf[j] = thisPart[i];
-            j++;
-        }
-        sendbuf[j] = ' ';
-        j++; // point to the next empty space in sendbuf
-        // Part 2- THIS_SERVER_ID
-        stringstream ss1;
-        ss1 << FLAGS_server_id;
-        ss1 >> thisPart;
-        for (size_t i; i < thisPart.length(); i++) {
-            sendbuf[j] = thisPart[i];
-            j++;
-        }
-        sendbuf[j] = ' ';
-        j++;
-        // Part 3- MEM_ADDR // TODO!!!!!!!! try using memcpy()
-        stringstream ss2;
-        ss2 << (uint64_t)databuf;
-        ss2 >> thisPart;
-        for (size_t i; i < thisPart.length(); i++) {
-            sendbuf[j] = thisPart[i];
-            j++;
-        }
-        // TODO!!!!!!!!!!! memcpy(); increment j accordingly
-        // memcpy(sendbuf[j], (uint64_t)databuf, sizeof(uint64_t));
-        // j += (sizeof(uint64_t)/sizeof(char));
-        sendbuf[j] = ' ';
-        j++;
-        // Part 4- LENGTH_TO_READ
-        size_t datalen = strlen(databuf);
-        stringstream ss3;
-        ss3 << datalen;
-        ss3 >> thisPart;
-        for (size_t i; i < thisPart.length(); i++) {
-            sendbuf[j] = thisPart[i];
-            j++;
-        }
-        // Finished building message string (sendbuf).
-
-        uint64_t wr_id = broker_->PostSend(sendbuf, strlen(sendbuf), server_id, 1);
-        RDMA_LOG(INFO) << fmt::format("PostSend(): sendbuf \"{}\", wr:{} imm:1", sendbuf, wr_id);
-        broker_->FlushPendingSends(server_id);
-        broker_->PollSQ(server_id);
-        broker_->PollRQ(server_id);
-    }
-    else { // should be node-1 executing this block
-        ReceiveRDMAReadInstruction(); // Also, by now RECV haven't finished.
-    }
-
-    while (true) {
-        broker_->PollRQ();
-        broker_->PollSQ();
-        if (FLAGS_server_id == 0) {
-            continue;
-        }
-        else { // RECV should've completed somewhere within while(true)
-            if (p2mc_->read_complete_ == false) {
-                ReceiveRDMAReadInstruction();
-            }
-            else {
-                p2mc_->read_complete_ = false; // suppress
-                assert(readbuf_);
-                RDMA_LOG(INFO) << fmt::format("Finally received *readbuf_: \"{}\"", this->readbuf_);
-            }
-        }
-    }
 }
 
-void ExampleRDMAThread::ReceiveRDMAReadInstruction() {
-    assert(FLAGS_server_id == 1); // let upper level ensure this
-    if (p2mc_->recv_history_.size() != 0) {
-        // if (p2mc_->recv_history.size() == 1 && p2mc_->recv_history_[0].length() == 0) {
-        //     return;
-        // }
-        string recvMsg = p2mc_->recv_history_[0];
-        RDMA_LOG(INFO) << fmt::format("i'm node-1, entry point 2, popping recv_history_[0]: \"{}\"", recvMsg);
-        p2mc_->recv_history_.pop_front();
-        if (recvMsg.substr(0, 5) != "P2GET") {
-            RDMA_LOG(INFO) << fmt::format("Weird recv_history_[0] content: \"{}\"", recvMsg);
-            return;
-        }
-        else {
-            // with a recvMsg starting with "P2GET", initiate RDMA read
-            ExecuteRDMARead(recvMsg);
-        }
-    }
-}
-
-void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
+string RDMAManager::readContentFromRDMA(string instruction) {
     // TODO how do I do sanity check?
     // TODO faster (index-based) instruction argument parsing?
 
     assert(instruction.substr(0, 5) == "P2GET"); // TODO remove?
-
-    // stringstream ss; ss << instruction; // both this and the line below works
     stringstream ss(instruction.c_str());
-
     string command;
     ss >> command; // TODO command gets "P2GET", how to skip this?
     int supplierServerID;
@@ -291,25 +136,6 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     uint32_t length;
     ss >> length;
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
-
-    // DONE: initiate RDMA READ
-
-    // RDMA Read might work with a memory region that is NOT registerd with RNIC
-    // but I'm not sure. To be safe, start with RNIC-registered block, but later
-    // on try good o' malloc() to see if I can reduce RNIC-registered memory
-    // usage.
-    // Additionally, instead of using broker_->GetSendBuf(), try ItemAlloc()
-    // first.
-
-    // uint64_t PostRead(char *localbuf, uint32_t size, int remote_server_id,
-    //                   uint64_t local_offset,
-    //                   uint64_t remote_addr, bool is_remote_offset);
-
-    // readbuf_ = "myass\0"; // writing into local read buffer will result in LOCAL PROTECTION ERROR on SERVER 0???
-    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf_ before read: \"{}\"", readbuf_); // examine if readbuf_ contains stuff to begin with
-    // try with local_offset = 0 (should be correct)
-    // TODO fiddle with read size = 3
-
     uint64_t wr_id = broker_->PostRead(readbuf_, length, supplierServerID, 0, memAddr, false); // trying with "true" for is_remote_offset
 
     // There is no elegant way to convert remote server memory addresses
@@ -324,9 +150,24 @@ void ExampleRDMAThread::ExecuteRDMARead(string instruction) {
     // RDMA READ is NOT YET complete! Only when msgCallback is hit, that means
     // this readbuf_ should be populated!
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf_ right after read attempt \"{}\", wr:{} imm:1", readbuf_, wr_id);
+    return string(readbuf_);
+}
 
-    // TODO do i need the line below?
-    broker_->FlushPendingSends(supplierServerID);
+string RDMAManager::writeContentToRDMA(string content) {
+
+	uint32_t scid = mem_manager->slabclassid(0, 200);
+    char *buf = mem_manager->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
+    strcpy(buf, content);
+    // finally free it
+    mem_manager->FreeItem(0, buf, scid);
+    string instruction = "P2GET";
+    instruction += " ";
+    instruction += std::to_string(FLAGS_server_id);
+    instruction += " ";
+    instruction += boost::lexical_cast<std::string>(val);
+    instruction += " ";
+    instruction += std::to_string(strlen(databuf));
+    return instruction;
 }
 
 int main(int argc, char *argv[]) {
@@ -382,20 +223,6 @@ int main(int argc, char *argv[]) {
     NovaMemManager *mem_manager = new NovaMemManager(user_memory, partitions,
                                                      FLAGS_mem_pool_size_gb,
                                                      slab_mb);
-    uint32_t scid = mem_manager->slabclassid(0, 40);
-    char *buf = mem_manager->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
-    // Do sth with the buf.
-    // buf[0] = 'n';
-    // buf[1] = 'o';
-    // buf[2] = 'd';
-    // buf[3] = 't';
-    // buf[4] = '\0';
-    // *buf = "what";
-    strcpy(buf, "what");
-    // TODO have the other node notify upon finish reading
-
-    // finally free it
-    mem_manager->FreeItem(0, buf, scid);
 
     // ML: look at above, a design decision is needed here. Do I instantiate
     // NovaMemManager here, or should I move it into the thread class? Thread
@@ -403,12 +230,12 @@ int main(int argc, char *argv[]) {
     // still work if NovaMemManager instantiation is moved into thread class?
     // ANSWER: just pass-by-reference a NovaMemManager instance to the thread
     // class!
-    ExampleRDMAThread *example = new ExampleRDMAThread(mem_manager); // with pass-by-pointer
-    example->circular_buffer_ = rdma_backing_mem; // ML: this is simply a char*, and it's meaningful-ness is interpreted at ExampleRDMAThread -> initializing NovaRDMARCBroker
-    example->ctrl_ = ctrl;
-    example->endpoints_ = endpoints;
-    example->rdma_backing_mem_ = rdma_backing_mem;
-    std::thread t(&ExampleRDMAThread::Start, example);
-    t.join();
+    RDMAManager *rdmaManager = new RDMAManager(mem_manager); // with pass-by-pointer
+    rdmaManager->circular_buffer_ = rdma_backing_mem; // ML: this is simply a char*, and it's meaningful-ness is interpreted at ExampleRDMAThread -> initializing NovaRDMARCBroker
+    rdmaManager->ctrl_ = ctrl;
+    rdmaManager->endpoints_ = endpoints;
+    rdmaManager->rdma_backing_mem_ = rdma_backing_mem;
+    string instruction = rdmaManager.writeContentToRDMA("test write function");
+    RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
     return 0;
 }
