@@ -160,7 +160,7 @@ string RDMAManager::writeContentToRDMA(char* content) {
     char *buf = nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     strcpy(buf, content);
     // finally free it
-    nmm_->FreeItem(0, buf, scid);
+    // nmm_->FreeItem(0, buf, scid);
     string instruction = "P2GET";
     instruction += " ";
     instruction += std::to_string(FLAGS_server_id);
