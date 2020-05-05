@@ -90,20 +90,21 @@ P2MsgCallback::P2MsgCallback() {
 // node-0 to free that memory.
 class RDMAManager {
 public:
-	RDMAManager(NovaMemManager *mem_manager);
+	RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_);
 	string writeContentToRDMA(char* content);
 	string readContentFromRDMA(string instruction);
-	RdmaCtrl *ctrl_;
-    std::vector<QPEndPoint> endpoints_;
-    char *rdma_backing_mem_;
-    char *circular_buffer_;
+
 private:
 	NovaMemManager *nmm_;
     NovaRDMARCBroker *broker_;
     char *readbuf_;
+    RdmaCtrl *ctrl_;
+    std::vector<QPEndPoint> endpoints_;
+    char *rdma_backing_mem_;
+    char *circular_buffer_;
 };
 
-RDMAManager::RDMAManager(NovaMemManager *mem_manager) {
+RDMAManager::RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_) {
 	this->nmm_ = mem_manager;
 	uint32_t scid = nmm_->slabclassid(500, 2000); // using 200 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
     this->readbuf_ = nmm_->ItemAlloc(0, scid);
@@ -119,6 +120,10 @@ RDMAManager::RDMAManager(NovaMemManager *mem_manager) {
                                     1024 * 1024,
                                     FLAGS_rdma_port,
                                     NULL);
+    this->ctrl_ = ctrl_;
+    this->endpoints_ = endpoints_;
+    this->rdma_backing_mem_ = rdma_backing_mem_;
+    this->circular_buffer_ = circular_buffer_;
     RDMA_LOG(INFO) << fmt::format("start initial broker");
     broker_->Init(ctrl_);
     RDMA_LOG(INFO) << fmt::format("end initial broker");
@@ -242,11 +247,8 @@ int main(int argc, char *argv[]) {
     // still work if NovaMemManager instantiation is moved into thread class?
     // ANSWER: just pass-by-reference a NovaMemManager instance to the thread
     // class!
-    RDMAManager *rdmaManager = new RDMAManager(mem_manager); // with pass-by-pointer
-    rdmaManager->circular_buffer_ = rdma_backing_mem; // ML: this is simply a char*, and it's meaningful-ness is interpreted at ExampleRDMAThread -> initializing NovaRDMARCBroker
-    rdmaManager->ctrl_ = ctrl;
-    rdmaManager->endpoints_ = endpoints;
-    rdmaManager->rdma_backing_mem_ = rdma_backing_mem;
+    // ML: this is simply a char*, and it's meaningful-ness is interpreted at ExampleRDMAThread -> initializing NovaRDMARCBroker
+    RDMAManager *rdmaManager = new RDMAManager(mem_manager, ctrl, endpoints, rdma_backing_mem_, rdma_backing_mem_); // with pass-by-pointer
     char content[] = "Hello"; 
     string instruction = rdmaManager->writeContentToRDMA(content);
     RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
