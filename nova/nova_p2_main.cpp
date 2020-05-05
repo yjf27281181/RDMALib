@@ -159,14 +159,14 @@ string RDMAManager::readContentFromRDMA(string instruction) {
     // RDMA READ is NOT YET complete! Only when msgCallback is hit, that means
     // this readbuf_ should be populated!
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf_ right after read attempt \"{}\", wr:{} imm:1", readbuf_, wr_id);
-    while (strlen(readbuf_) <=0) {
+
 
         
-        assert(readbuf_);
-        RDMA_LOG(INFO) << fmt::format("Finally received *readbuf_: \"{}\"", this->readbuf_);
+    assert(readbuf_);
+    RDMA_LOG(INFO) << fmt::format("Finally received *readbuf_: \"{}\"", this->readbuf_);
             
         
-    }
+    
     return string(readbuf_);
 }
 
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
     char content[] = "Hello"; 
     string instruction = rdmaManager->writeContentToRDMA(content);
     RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
-    rdmaManager->readContentFromRDMA(instruction);
-    
+    string result = rdmaManager->readContentFromRDMA(instruction);
+    RDMA_LOG(INFO) << fmt::format("main(): result {}", result);
     return 0;
 }
