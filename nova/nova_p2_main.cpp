@@ -87,7 +87,7 @@ P2MsgCallback::P2MsgCallback() {
 // node-1 should: 1. wait to RECV a msg from node-0 indication memory location,
 // 2. use RDMA READ to obtain data from that location 3. use SEND to signal
 // node-0 to free that memory.
-class RDMAManager() {
+class RDMAManager {
 public:
 	RDMAManager(NovaMemManager *mem_manager);
 	string writeContentToRDMA(string content);
