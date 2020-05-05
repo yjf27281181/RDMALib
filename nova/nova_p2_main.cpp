@@ -165,7 +165,7 @@ string RDMAManager::writeContentToRDMA(char* content) {
     instruction += " ";
     instruction += std::to_string(FLAGS_server_id);
     instruction += " ";
-    instruction += boost::lexical_cast<std::string>(val);
+    instruction += boost::lexical_cast<std::string>((uint64_t)buf);
     instruction += " ";
     instruction += std::to_string(strlen(content));
     return instruction;
@@ -236,7 +236,8 @@ int main(int argc, char *argv[]) {
     rdmaManager->ctrl_ = ctrl;
     rdmaManager->endpoints_ = endpoints;
     rdmaManager->rdma_backing_mem_ = rdma_backing_mem;
-    string instruction = rdmaManager->writeContentToRDMA("test write function");
+    char content[] = "Hello"; 
+    string instruction = rdmaManager->writeContentToRDMA(content);
     RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
     return 0;
 }
