@@ -105,7 +105,7 @@ private:
 
 RDMAManager::RDMAManager(NovaMemManager *mem_manager) {
 	this->nmm_ = mem_manager;
-	uint32_t scid = nmm_->slabclassid(0, 200); // using 200 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
+	uint32_t scid = nmm_->slabclassid(500, 2000); // using 200 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
     this->readbuf_ = nmm_->ItemAlloc(0, scid);
     this->broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
                                     endpoints_,
