@@ -105,7 +105,7 @@ private:
 
 RDMAManager::RDMAManager(NovaMemManager *mem_manager) {
 	this->nmm_ = mem_manager;
-	uint32_t scid = nmm_->slabclassid(0, 2000); // using 2000 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
+	uint32_t scid = nmm_->slabclassid(0, 200); // using 200 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
     this->readbuf_ = nmm_->ItemAlloc(0, scid);
     this->broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
                                     endpoints_,
@@ -151,6 +151,14 @@ string RDMAManager::readContentFromRDMA(string instruction) {
     // RDMA READ is NOT YET complete! Only when msgCallback is hit, that means
     // this readbuf_ should be populated!
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf_ right after read attempt \"{}\", wr:{} imm:1", readbuf_, wr_id);
+    while (strlen(readbuf_) <=0) {
+
+        
+        ssert(readbuf_);
+        RDMA_LOG(INFO) << fmt::format("Finally received *readbuf_: \"{}\"", this->readbuf_);
+            
+        
+    }
     return string(readbuf_);
 }
 
@@ -239,7 +247,7 @@ int main(int argc, char *argv[]) {
     char content[] = "Hello"; 
     string instruction = rdmaManager->writeContentToRDMA(content);
     RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
-    string contentFromRDMA = rdmaManager->readContentFromRDMA(instruction);
-    RDMA_LOG(INFO) << fmt::format("main(): content {}", contentFromRDMA);
+    rdmaManager->readContentFromRDMA(instruction);
+    
     return 0;
 }
