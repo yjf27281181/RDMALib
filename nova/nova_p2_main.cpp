@@ -119,6 +119,7 @@ RDMAManager::RDMAManager(NovaMemManager *mem_manager) {
                                     1024 * 1024,
                                     FLAGS_rdma_port,
                                     NULL);
+    broker_->Init(ctrl_);
 
 }
 
