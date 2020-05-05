@@ -154,7 +154,7 @@ string RDMAManager::readContentFromRDMA(string instruction) {
     while (strlen(readbuf_) <=0) {
 
         
-        ssert(readbuf_);
+        assert(readbuf_);
         RDMA_LOG(INFO) << fmt::format("Finally received *readbuf_: \"{}\"", this->readbuf_);
             
         
