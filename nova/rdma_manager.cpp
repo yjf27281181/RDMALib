@@ -79,7 +79,7 @@ string RDMAManager::readContentFromRDMA(RdmaReadRequest* request) {
     } 
     memcpy(sendBuffer, tmpArray, sizeof(request->instruction));
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
-    uint64_t wr_id = broker_->PostRead(readbuf_, length, supplierServerID, 0, memAddr, false); // trying with "true" for is_remote_offset
+    uint64_t wr_id = broker_->PostRead(request->readBuffer, length, supplierServerID, 0, memAddr, false); // trying with "true" for is_remote_offset
 	broker_->FlushPendingSends(supplierServerID);
     // There is no elegant way to convert remote server memory addresses
     // (where to read from) to a string, and convert it back. Try using uint64_t
