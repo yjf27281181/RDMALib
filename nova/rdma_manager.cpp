@@ -1,5 +1,6 @@
 #include "rdma_manager.h"
 
+
 RDMAManager::RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_) {
 	this->nmm_ = mem_manager;
 	this->p2mc_ = new P2MsgCallback();
@@ -27,13 +28,38 @@ RDMAManager::RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vect
 
 }
 
+void RDMAManager::Start() {
+	RDMA_LOG(INFO) << fmt::format("rdma while loop start()");
+	while(true) {
+		if(readRequests.size() > 0) {
+			RdmaReadRequest curRequest = popRequestFromQueue();
+			p2mc_->hmap.insert(pair<string,RdmaReadRequest>(curRequest.instruction,curRequest));
+		}
+		broker_->PollRQ();
+        broker_->PollSQ();
+	}
+}
 
-string RDMAManager::readContentFromRDMA(string instruction) {
+void RDMAManager::addRequestToQueue(RdmaReadRequest request) {
+	addPopMutex.lock();
+	readRequests.push(request);
+	addPopMutex.unlock();
+}
+
+RdmaReadRequest RDMAManager::popRequestFromQueue() {
+	addPopMutex.lock();
+	RdmaReadRequest res = readRequests.pop();
+	addPopMutex.unlock();
+	return res;
+}
+
+
+string RDMAManager::readContentFromRDMA(RdmaReadRequest readRequest) {
     // TODO how do I do sanity check?
     // TODO faster (index-based) instruction argument parsing?
 
     assert(instruction.substr(0, 5) == "P2GET"); // TODO remove?
-    stringstream ss(instruction.c_str());
+    stringstream ss(request.instruction.c_str());
     string command;
     ss >> command; // TODO command gets "P2GET", how to skip this?
     int supplierServerID;
@@ -43,7 +69,7 @@ string RDMAManager::readContentFromRDMA(string instruction) {
     uint32_t length;
     ss >> length;
     char* sendBuffer = broker_->getSendBuff(supplierServerID);
-    memcpy(sendBuffer, "1");
+    memcpy(sendBuffer, request.instruction);
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
     uint64_t wr_id = broker_->PostRead(readbuf_, length, supplierServerID, 0, memAddr, false); // trying with "true" for is_remote_offset
 	broker_->FlushPendingSends(supplierServerID);

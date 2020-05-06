@@ -106,7 +106,11 @@ int main(int argc, char *argv[]) {
     // ML: this is simply a char*, and it's meaningful-ness is interpreted at ExampleRDMAThread -> initializing NovaRDMARCBroker
     RDMAManager *rdmaManager = new RDMAManager(mem_manager, ctrl, endpoints, rdma_backing_mem, rdma_backing_mem); // with pass-by-pointer
     char content[] = "Hello"; 
+
+
     string instruction = rdmaManager->writeContentToRDMA(content);
+    char buffertest[1000];
+    RdmaReadRequest rdmaRequest(instruction, buffertest);
     RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
     rdmaManager->readContentFromRDMA(instruction);
 

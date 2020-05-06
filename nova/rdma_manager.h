@@ -8,10 +8,26 @@
 #include <gflags/gflags.h>
 #include <string.h>
 #include <sstream> // ML: for saving memory address (pointed-to) as a string, so it can be send over RDMA
+#include <queue>
 
+#include<unordered_map>
+#include <mutex>
 using namespace std;
 using namespace rdmaio;
 using namespace nova;
+
+class RdmaReadRequest {
+public:
+    RdmaReadRequest(string instruction, char* readBuffer) {
+        this.instruction = instruction;
+        this.readBuffer = readBuffer;
+    }
+    mutex readMutex;
+    condition_variable cv;
+    string instruction;
+    char* readBuffer;
+    
+};
 
 // ML: This is what i should mainly be editing. Let's dictate that node-0 wakes
 // up to write some naive data in a known location (or that location can be
@@ -24,13 +40,17 @@ using namespace nova;
 // it back that the memory location is good to be freed. On the other hand,
 // node-1 should: 1. wait to RECV a msg from node-0 indication memory location,
 // 2. use RDMA READ to obtain data from that location 3. use SEND to signal
-// node-0 to free that memory.
+// node-0 to free that memory
+
 class RDMAManager {
 public:
     RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_);
     string writeContentToRDMA(char* content);
-    string readContentFromRDMA(string instruction);
-
+    string readContentFromRDMA(RdmaReadRequest readRequest);
+    void addRequestToQueue(RdmaReadRequest request);
+    RdmaReadRequest popRequestFromQueue();
+    void Start();
+    
 private:
     NovaMemManager *nmm_;
     NovaRDMARCBroker *broker_;
@@ -40,13 +60,20 @@ private:
     char *rdma_backing_mem_;
     char *circular_buffer_;
     P2MsgCallback* p2mc_;
+    std::queue<RdmaReadRequest> readRequests;
+    mutex addPopMutex;
+    
 };
 
 
+
+
 class P2MsgCallback : public NovaMsgCallback {
+private:
+    std::condition_variable cv;
 public:
     P2MsgCallback();
-
+    unordered_map<string,RdmaReadRequest> hmap;
     // used to record received message
     deque<string> recv_history_;
     bool read_complete_;
@@ -55,14 +82,17 @@ public:
     // empty string in here...
     bool ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
                   char *sendBuffer, uint32_t imm_data) override {
-        string bufContent(readbuf);
+        string instruction(sendBuffer);
         RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:\"{}\" imm:{}",
                                       ibv_wc_opcode_str(type), wr_id,
                                       remote_server_id, bufContent, imm_data);
 		if (type == IBV_WC_RDMA_READ) {
-            RDMA_LOG(INFO) << fmt::format(" READ COMPLETED, buf:\"{}\"", bufContent);
-            this->read_complete_ = true;
-            // TODO! WHY THE FUCK CAN'T I JUST GET THE READ DATA ALREADY??
+            RDMA_LOG(INFO) << fmt::format(" READ COMPLETED, instruction:\"{}\"", instruction);
+            std::unordered_map<string, RdmaReadRequest>::iterator it;
+            RdmaReadRequest request = hmap.find(instruction);
+            std::lock_guard<std::mutex> lk(request.readMutex);
+            request.cv.notify_all();
+            RDMA_LOG(INFO) << fmt::format(" notify thread, instruction:\"{}\"", instruction);
         }
         return true;
     }
