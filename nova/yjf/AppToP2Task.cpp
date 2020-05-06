@@ -45,7 +45,7 @@ int AppToP2Task::Run()
 		bool isNetworkBusy = true;
 		//cout << "from_redis: " << from_redis << endl;
 		//if network is busy and the command is get, redirect
-		char[] content = "testContent";
+		char content[] = "testContent";
 		if (cmd == "GET" && isNetworkBusy) {
 			string instruction = rdmaManager->writeContentToRDMA(content);
 			RDMA_LOG(INFO) << fmt::format("apptop2task(): instruction {}", instruction);
@@ -55,7 +55,7 @@ int AppToP2Task::Run()
 			clientConnection->sendMsgToServer(redirectCmd, cmd_len, buffer, client_socket);
 		}
 		else {
-			clientConnection->sendMsgToServer(from_redis, len_from_redis, buffer, client_socket);
+			//clientConnection->sendMsgToServer(from_redis, len_from_redis, buffer, client_socket);
 		}
 	}
 	return 0;
