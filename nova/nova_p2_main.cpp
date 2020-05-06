@@ -7,6 +7,7 @@
 #include "nova_config.h"
 #include "nova_rdma_rc_broker.h"
 #include "nova_mem_manager.h"
+#include "rdma_manager.h"
 
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -40,145 +41,7 @@ DEFINE_uint64(rdma_doorbell_batch_size, 0, "The doorbell batch size.");
 DEFINE_uint32(nrdma_workers, 0,
               "Number of rdma threads.");
 
-// ML: first step is to implement NovaMsgCallback interface
-class P2MsgCallback : public NovaMsgCallback {
-public:
-    P2MsgCallback();
 
-    // used to record received message
-    deque<string> recv_history_;
-    bool read_complete_;
-
-    // TODO! figure out why an RDMA READ attempt result in receiving an
-    // empty string in here...
-    bool ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
-                  char *readbuf, uint32_t imm_data) override {
-        string bufContent(readbuf);
-        RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:\"{}\" imm:{}",
-                                      ibv_wc_opcode_str(type), wr_id,
-                                      remote_server_id, bufContent, imm_data);
-		if (type == IBV_WC_RDMA_READ) {
-            RDMA_LOG(INFO) << fmt::format(" READ COMPLETED, buf:\"{}\"", bufContent);
-            this->read_complete_ = true;
-            // TODO! WHY THE FUCK CAN'T I JUST GET THE READ DATA ALREADY??
-        }
-        return true;
-    }
-};
-
-P2MsgCallback::P2MsgCallback() {
-    this->read_complete_ = false; // initialize to false on construction
-}
-
-
-
-// ML: This is what i should mainly be editing. Let's dictate that node-0 wakes
-// up to write some naive data in a known location (or that location can be
-// obtained and sent to node-1 at run time). Then, run the same code on node-1
-// which wakes up to immediately [look for that location and then] read from
-// node-0's that location.
-// After reading <Intro to IB> it becomes clearer: node-0 upon detecting that
-// itself being node-0, should: 1. register a memory location 2. send that
-// location information as a SEND to node-1 3. wait until node-1 somehow signals
-// it back that the memory location is good to be freed. On the other hand,
-// node-1 should: 1. wait to RECV a msg from node-0 indication memory location,
-// 2. use RDMA READ to obtain data from that location 3. use SEND to signal
-// node-0 to free that memory.
-class RDMAManager {
-public:
-	RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_);
-	string writeContentToRDMA(char* content);
-	string readContentFromRDMA(string instruction);
-
-private:
-	NovaMemManager *nmm_;
-    NovaRDMARCBroker *broker_;
-    char *readbuf_;
-    RdmaCtrl *ctrl_;
-    std::vector<QPEndPoint> endpoints_;
-    char *rdma_backing_mem_;
-    char *circular_buffer_;
-    P2MsgCallback* p2mc_;
-};
-
-RDMAManager::RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_) {
-	this->nmm_ = mem_manager;
-	this->p2mc_ = new P2MsgCallback();
-	uint32_t scid = nmm_->slabclassid(500, 2000); // using 200 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
-    this->readbuf_ = nmm_->ItemAlloc(0, scid);
-    this->broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
-                                    endpoints_,
-                                    FLAGS_rdma_max_num_sends,
-                                    FLAGS_rdma_max_msg_size,
-                                    FLAGS_rdma_doorbell_batch_size,
-                                    FLAGS_server_id,
-                                    rdma_backing_mem_,
-                                    FLAGS_mem_pool_size_gb *
-                                    1024 *
-                                    1024 * 1024,
-                                    FLAGS_rdma_port,
-                                    p2mc_);
-    this->ctrl_ = ctrl_;
-    this->endpoints_ = endpoints_;
-    this->rdma_backing_mem_ = rdma_backing_mem_;
-    this->circular_buffer_ = circular_buffer_;
-    RDMA_LOG(INFO) << fmt::format("start initial broker");
-    broker_->Init(ctrl_);
-    RDMA_LOG(INFO) << fmt::format("end initial broker");
-
-}
-
-string RDMAManager::readContentFromRDMA(string instruction) {
-    // TODO how do I do sanity check?
-    // TODO faster (index-based) instruction argument parsing?
-
-    assert(instruction.substr(0, 5) == "P2GET"); // TODO remove?
-    stringstream ss(instruction.c_str());
-    string command;
-    ss >> command; // TODO command gets "P2GET", how to skip this?
-    int supplierServerID;
-    ss >> supplierServerID;
-    uint64_t memAddr;
-    ss >> memAddr;
-    uint32_t length;
-    ss >> length;
-    RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
-    uint64_t wr_id = broker_->PostRead(readbuf_, length, supplierServerID, 0, memAddr, false); // trying with "true" for is_remote_offset
-	broker_->FlushPendingSends(supplierServerID);
-    // There is no elegant way to convert remote server memory addresses
-    // (where to read from) to a string, and convert it back. Try using uint64_t
-    // from the very beginning, with some format-specified printing in RDMA_LOG
-    // should make things work. Update: Haoyu said simply cast to uint64_t from
-    // the very beginning, where node-0 constructs char *sendbuf
-    // Update 2: not just simply cast to uint64_t after RECV, but also store
-    // node-0's message as uint64_t for memAddr. memcpy().
-
-    // this line below is VERY problematic! Basically when hitting this line,
-    // RDMA READ is NOT YET complete! Only when msgCallback is hit, that means
-    // this readbuf_ should be populated!
-    RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf_ right after read attempt \"{}\", wr:{} imm:1", readbuf_, wr_id);
-            
-        
-    
-    return string(readbuf_);
-}
-
-string RDMAManager::writeContentToRDMA(char* content) {
-
-	uint32_t scid = nmm_->slabclassid(0, 200);
-    char *buf = nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
-    strcpy(buf, content);
-    // finally free it
-    // nmm_->FreeItem(0, buf, scid);
-    string instruction = "P2GET";
-    instruction += " ";
-    instruction += std::to_string(FLAGS_server_id);
-    instruction += " ";
-    instruction += boost::lexical_cast<std::string>((uint64_t)buf);
-    instruction += " ";
-    instruction += std::to_string(strlen(content));
-    return instruction;
-}
 
 int main(int argc, char *argv[]) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -246,9 +109,6 @@ int main(int argc, char *argv[]) {
     string instruction = rdmaManager->writeContentToRDMA(content);
     RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
     rdmaManager->readContentFromRDMA(instruction);
-    while(true) {
-    	broker_->PollRQ();
-        broker_->PollSQ();
-    }
+
     return 0;
 }
