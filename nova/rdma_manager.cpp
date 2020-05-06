@@ -101,6 +101,7 @@ string RDMAManager::writeContentToRDMA(char* content) {
 	uint32_t scid = nmm_->slabclassid(0, 200);
     char *buf = nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     memcpy(buf, content, 200);
+    nmm_->FreeItem(0, buf, scid);
     // finally free it
     // nmm_->FreeItem(0, buf, scid);
     string instruction = "P2GET";
