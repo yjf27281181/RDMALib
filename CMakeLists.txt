@@ -45,6 +45,18 @@ target_sources(rdmalib
         nova/rdma_manager.cpp
         nova/rdma_manager.h
         nova/nova_mem_manager.h
+        nova/yjf/AppToP2Server.cpp
+        nova/yjf/AppToP2Server.h
+        nova/yjf/AppToP2Task.cpp
+        nova/yjf/AppToP2Task.h
+        nova/yjf/BasicConnection.cpp
+        nova/yjf/BasicConnection.h
+        nova/yjf/P2RedirectServer.cpp
+        nova/yjf/P2RedirectServer.h
+        nova/yjf/P2RedirectTask.cpp
+        nova/yjf/P2RedirectTask.h
+        nova/yjf/Thread.cpp
+        nova/yjf/Thread.h
         )
 # Needed by port_stdcxx.h
 find_package(Threads REQUIRED)

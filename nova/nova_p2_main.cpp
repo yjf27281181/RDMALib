@@ -18,6 +18,9 @@
 #include <csignal>
 #include <gflags/gflags.h>
 #include <boost/lexical_cast.hpp>
+#include "AppToP2Server.h";
+#include "P2RedirectServer.h";
+#include "Thread.h";
 
 #include <sstream> // ML: for saving memory address (pointed-to) as a string, so it can be send over RDMA
 
@@ -105,15 +108,14 @@ int main(int argc, char *argv[]) {
     // class!
     // ML: this is simply a char*, and it's meaningful-ness is interpreted at ExampleRDMAThread -> initializing NovaRDMARCBroker
     RDMAManager *rdmaManager = new RDMAManager(mem_manager, ctrl, endpoints, rdma_backing_mem, rdma_backing_mem); // with pass-by-pointer
-    char content[] = "Hello"; 
 	std::thread t(&RDMAManager::Start, rdmaManager);
 
-    string instruction = rdmaManager->writeContentToRDMA(content);
-    char buffertest[1000];
-    RdmaReadRequest* rdmaRequest = new RdmaReadRequest(instruction, buffertest);
-    RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
-    rdmaManager->addRequestToQueue(rdmaRequest);
-    RDMA_LOG(INFO) << fmt::format("have add request to queue");
+    //run server
+    CThreadPool Pool(5);
+	CTask* appToP2Server = new AppToP2Server(rdmaManager);
+	Pool.AddTask(appToP2Server);
+	CTask* p2RedirectServer = new P2RedirectServer(rdmaManager);
+	Pool.AddTask(p2RedirectServer);
     getchar();
     return 0;
 }
