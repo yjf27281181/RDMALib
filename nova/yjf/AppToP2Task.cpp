@@ -50,10 +50,16 @@ int AppToP2Task::Run()
 			string instruction = rdmaManager->writeContentToRDMA(content);
 			
 			//save the content in the rdma, return address, offset, length to the p2 client.
-			char* redirectCmd = constructRedisReturn("redirect#redis01#1023423#0#1024"); //return sample
+			string redirectCmd = constructRedisReturn("redirect#redis01#1023423#0#1024"); //return sample
 			int cmd_len = strlen(redirectCmd);
-			RDMA_LOG(INFO) << fmt::format("apptop2task(): instruction {}", redirectCmd);
-			clientConnection->sendMsgToServer(redirectCmd, cmd_len, buffer, client_socket);
+			char p[redirectCmd.length()]; 
+  
+    		for (int i = 0; i < sizeof(p); i++) { 
+        		p[i] = redirectCmd[i]; 
+        		cout << p[i]; 
+    		} 
+			RDMA_LOG(INFO) << fmt::format("apptop2task(): instruction {}", cmd_len);
+			clientConnection->sendMsgToServer(p, cmd_len, buffer, client_socket);
 		}
 		else {
 			//clientConnection->sendMsgToServer(from_redis, len_from_redis, buffer, client_socket);
@@ -67,7 +73,7 @@ AppToP2Task::~AppToP2Task()
 {
 }
 
-char * AppToP2Task::constructRedisReturn(string str)
+string AppToP2Task::constructRedisReturn(string str)
 {
 	string res = "";
 	res.push_back((char)36);
@@ -78,5 +84,5 @@ char * AppToP2Task::constructRedisReturn(string str)
 	res.push_back((char)13); //carriage return 
 	res.push_back((char)10); //carriage return 
 	RDMA_LOG(INFO) << fmt::format("construct instruction {}", res);
-	return (char*)res.data();
+	return res;
 }
