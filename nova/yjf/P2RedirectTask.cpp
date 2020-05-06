@@ -42,7 +42,7 @@ int P2RedirectTask::Run()
 	std::unique_lock<std::mutex> lock(request->readMutex);
 	request->cv.wait(lock);
 	RDMA_LOG(INFO) << fmt::format("writeBuffer content {}", writeBuffer);
-	string contentFromRDMA(writeBuffer)
+	string contentFromRDMA(writeBuffer);
 	string redisReturn = constructRedisReturn(contentFromRDMA);
 	int res_len = redisReturn.length();
 	char res_char_arry[redisReturn.length()]; 
