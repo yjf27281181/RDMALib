@@ -51,17 +51,13 @@ public:
 
     // TODO! figure out why an RDMA READ attempt result in receiving an
     // empty string in here...
-    bool
-    ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
-                  char *buf, uint32_t imm_data) override {
-        string bufContent(buf);
+    bool ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
+                  char *readbuf, uint32_t imm_data) override {
+        string bufContent(readbuf);
         RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:\"{}\" imm:{}",
                                       ibv_wc_opcode_str(type), wr_id,
                                       remote_server_id, bufContent, imm_data);
-        if (type == IBV_WC_RECV) {
-            this->recv_history_.push_back(bufContent);
-        }
-        else if (type == IBV_WC_RDMA_READ) {
+		if (type == IBV_WC_RDMA_READ) {
             RDMA_LOG(INFO) << fmt::format(" READ COMPLETED, buf:\"{}\"", bufContent);
             this->read_complete_ = true;
             // TODO! WHY THE FUCK CAN'T I JUST GET THE READ DATA ALREADY??
@@ -102,10 +98,12 @@ private:
     std::vector<QPEndPoint> endpoints_;
     char *rdma_backing_mem_;
     char *circular_buffer_;
+    P2MsgCallback* p2mc_;
 };
 
 RDMAManager::RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_) {
 	this->nmm_ = mem_manager;
+	this->p2mc_ = new P2MsgCallback;
 	uint32_t scid = nmm_->slabclassid(500, 2000); // using 200 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
     this->readbuf_ = nmm_->ItemAlloc(0, scid);
     this->broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
@@ -119,7 +117,7 @@ RDMAManager::RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vect
                                     1024 *
                                     1024 * 1024,
                                     FLAGS_rdma_port,
-                                    NULL);
+                                    p2mc_);
     this->ctrl_ = ctrl_;
     this->endpoints_ = endpoints_;
     this->rdma_backing_mem_ = rdma_backing_mem_;
@@ -159,11 +157,6 @@ string RDMAManager::readContentFromRDMA(string instruction) {
     // RDMA READ is NOT YET complete! Only when msgCallback is hit, that means
     // this readbuf_ should be populated!
     RDMA_LOG(INFO) << fmt::format("PostRead(): readbuf_ right after read attempt \"{}\", wr:{} imm:1", readbuf_, wr_id);
-
-
-        
-    assert(readbuf_);
-    RDMA_LOG(INFO) << fmt::format("Finally received *readbuf_: \"{}\"", this->readbuf_);
             
         
     
