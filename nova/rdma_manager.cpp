@@ -49,7 +49,7 @@ void RDMAManager::addRequestToQueue(RdmaReadRequest* request) {
 RdmaReadRequest* RDMAManager::popRequestFromQueue() {
 	addPopMutex.lock();
 	RdmaReadRequest* res = readRequests.front();
-	readRequests.pop()
+	readRequests.pop();
 	addPopMutex.unlock();
 	return res;
 }
