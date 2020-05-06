@@ -26,7 +26,7 @@ DECLARE_uint64(rdma_port);
 DECLARE_uint64(rdma_max_msg_size);
 DECLARE_uint64(rdma_max_num_sends);
 DECLARE_uint64(rdma_doorbell_batch_size);
-DECLARE_uint32(nrdma_workers);
+DECLARE_uint64(nrdma_workers);
 
 class RdmaReadRequest {
 public:

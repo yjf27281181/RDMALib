@@ -38,7 +38,7 @@ DEFINE_uint64(rdma_max_msg_size, 0, "The maximum message size used by RDMA.");
 DEFINE_uint64(rdma_max_num_sends, 0,
               "The maximum number of pending RDMA sends. This includes READ/WRITE/SEND. We also post the same number of RECV events for each QP. ");
 DEFINE_uint64(rdma_doorbell_batch_size, 0, "The doorbell batch size.");
-DEFINE_uint32(nrdma_workers, 0,
+DEFINE_uint64(nrdma_workers, 0,
               "Number of rdma threads.");
 
 
