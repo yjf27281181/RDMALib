@@ -46,7 +46,7 @@ private:
     std::condition_variable cv;
 public:
     P2MsgCallback();
-    unordered_map<string,*RdmaReadRequest> hmap;
+    unordered_map<string,RdmaReadRequest*> hmap;
     // used to record received message
     deque<string> recv_history_;
     bool read_complete_;
@@ -67,7 +67,7 @@ public:
             if( it == hmap.end() ) {
                 RDMA_LOG(INFO) << fmt::format("wrong, instruction not found, instruction is:\"{}\"", instruction);
             } else {
-                RdmaReadRequest* request = &(it->second);
+                RdmaReadRequest* request = it->second;
                 std::lock_guard<std::mutex> lk(request->readMutex);
                 request->cv.notify_all();
                 RDMA_LOG(INFO) << fmt::format(" notify thread, instruction:\"{}\"", instruction);
