@@ -51,7 +51,7 @@ int AppToP2Task::Run()
 			
 			//save the content in the rdma, return address, offset, length to the p2 client.
 			string redirectCmd = constructRedisReturn("redirect#redis01#1023423#0#1024"); //return sample
-			int cmd_len = strlen(redirectCmd);
+			int cmd_len = redirectCmd.length();
 			char p[redirectCmd.length()]; 
   
     		for (int i = 0; i < sizeof(p); i++) { 
