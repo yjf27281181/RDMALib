@@ -5,7 +5,7 @@
 P2RedirectServer::P2RedirectServer(RDMAManager *rdmaManager)
 {
 	this->Pool = new CThreadPool(10);
-	this->rdmaManager = rdmaManager
+	this->rdmaManager = rdmaManager;
 }
 
 int P2RedirectServer::Run()

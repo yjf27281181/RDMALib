@@ -12,7 +12,7 @@ P2RedirectTask::P2RedirectTask(BasicConnection* clientConnection, char* buffer, 
 	}
 	this->from_app_len = from_app_len;
 	this->client_socket = client_socket;
-	this->rdmaManager = rdmaManager;;
+	this->rdmaManager = rdmaManager;
 }
 
 int P2RedirectTask::Run()
