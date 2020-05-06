@@ -1,7 +1,6 @@
 // Created by Mian Lu on 4/16/20.
 // Reusing code from TA Haoyu's example_main.cpp
 // Copyright (c) 2020 University of Southern California. All rights reserved.
-#pragma once
 #include "rdma_ctrl.hpp"
 #include "nova_common.h"
 #include "nova_config.h"
@@ -18,9 +17,9 @@
 #include <csignal>
 #include <gflags/gflags.h>
 #include <boost/lexical_cast.hpp>
-#include "yjf/AppToP2Server.h";
-#include "yjf/P2RedirectServer.h";
-#include "yjf/Thread.h";
+#include "yjf/AppToP2Server.h"
+#include "yjf/P2RedirectServer.h"
+#include "yjf/Thread.h"
 
 #include <sstream> // ML: for saving memory address (pointed-to) as a string, so it can be send over RDMA
 
@@ -114,7 +113,7 @@ int main(int argc, char *argv[]) {
     CThreadPool Pool(5);
 	CTask* appToP2Server = new AppToP2Server(rdmaManager);
 	Pool.AddTask(appToP2Server);
-	CTask* p2RedirectServer = new P2RedirectServer(rdmaManager);
+	CTask* p2RedirectServer = new P2RedirectServer();
 	Pool.AddTask(p2RedirectServer);
     getchar();
     return 0;

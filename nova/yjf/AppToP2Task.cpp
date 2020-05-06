@@ -76,6 +76,5 @@ char * AppToP2Task::constructRedisReturn(string str)
 	res.append(str); 
 	res.push_back((char)13); //carriage return 
 	res.push_back((char)10); //carriage return 
-	printf("--------------!!!%s %d", (char*)res.data());
 	return (char*)res.data();
 }
