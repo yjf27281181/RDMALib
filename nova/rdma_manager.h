@@ -1,4 +1,5 @@
 // ML: first step is to implement NovaMsgCallback interface
+#pragma once
 #include "rdma_ctrl.hpp"
 #include "nova_common.h"
 #include "nova_config.h"

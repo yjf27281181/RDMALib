@@ -1,7 +1,7 @@
 // Created by Mian Lu on 4/16/20.
 // Reusing code from TA Haoyu's example_main.cpp
 // Copyright (c) 2020 University of Southern California. All rights reserved.
-
+#pragma once
 #include "rdma_ctrl.hpp"
 #include "nova_common.h"
 #include "nova_config.h"
