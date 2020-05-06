@@ -18,9 +18,9 @@
 #include <csignal>
 #include <gflags/gflags.h>
 #include <boost/lexical_cast.hpp>
-#include "AppToP2Server.h";
-#include "P2RedirectServer.h";
-#include "Thread.h";
+#include "yjf/AppToP2Server.h";
+#include "yjf/P2RedirectServer.h";
+#include "yjf/Thread.h";
 
 #include <sstream> // ML: for saving memory address (pointed-to) as a string, so it can be send over RDMA
 
