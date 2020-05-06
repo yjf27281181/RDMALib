@@ -71,6 +71,7 @@ public:
                 std::lock_guard<std::mutex> lk(request->readMutex);
                 request->cv.notify_all();
                 RDMA_LOG(INFO) << fmt::format(" notify thread, instruction:\"{}\"", instruction);
+                hmap.erase(instruction);
             }
             
         }
