@@ -62,7 +62,7 @@ public:
         if (type == IBV_WC_RDMA_READ) {
             RDMA_LOG(INFO) << fmt::format(" READ COMPLETED, instruction:\"{}\"", instruction);
 
-            std::unordered_map<string, *RdmaReadRequest>::iterator it;
+            std::unordered_map<string, RdmaReadRequest*>::iterator it;
             it = hmap.find(instruction);
             if( it == hmap.end() ) {
                 RDMA_LOG(INFO) << fmt::format("wrong, instruction not found, instruction is:\"{}\"", instruction);
