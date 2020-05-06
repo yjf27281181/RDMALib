@@ -16,17 +16,56 @@ using namespace std;
 using namespace rdmaio;
 using namespace nova;
 
+
+
 class RdmaReadRequest {
 public:
     RdmaReadRequest(string instruction, char* readBuffer) {
-        this.instruction = instruction;
-        this.readBuffer = readBuffer;
+        this->instruction = instruction;
+        this->readBuffer = readBuffer;
     }
     mutex readMutex;
     condition_variable cv;
     string instruction;
     char* readBuffer;
     
+};
+
+class P2MsgCallback : public NovaMsgCallback {
+private:
+    std::condition_variable cv;
+public:
+    P2MsgCallback();
+    unordered_map<string,RdmaReadRequest> hmap;
+    // used to record received message
+    deque<string> recv_history_;
+    bool read_complete_;
+
+    // TODO! figure out why an RDMA READ attempt result in receiving an
+    // empty string in here...
+    bool ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
+                  char *sendBuffer, uint32_t imm_data) override {
+        string instruction(sendBuffer);
+        RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:\"{}\" imm:{}",
+                                      ibv_wc_opcode_str(type), wr_id,
+                                      remote_server_id, instruction, imm_data);
+        if (type == IBV_WC_RDMA_READ) {
+            RDMA_LOG(INFO) << fmt::format(" READ COMPLETED, instruction:\"{}\"", instruction);
+
+            std::unordered_map<string, RdmaReadRequest>::iterator it;
+            it = hmap.find(instruction);
+            if( it == hmap.end() ) {
+                RDMA_LOG(INFO) << fmt::format("wrong, instruction not found, instruction is:\"{}\"", instruction);
+            } else {
+                RdmaReadRequest* request = &(it->second);
+                std::lock_guard<std::mutex> lk(request->readMutex);
+                request->cv.notify_all();
+                RDMA_LOG(INFO) << fmt::format(" notify thread, instruction:\"{}\"", instruction);
+            }
+            
+        }
+        return true;
+    }
 };
 
 // ML: This is what i should mainly be editing. Let's dictate that node-0 wakes
@@ -68,32 +107,3 @@ private:
 
 
 
-class P2MsgCallback : public NovaMsgCallback {
-private:
-    std::condition_variable cv;
-public:
-    P2MsgCallback();
-    unordered_map<string,RdmaReadRequest> hmap;
-    // used to record received message
-    deque<string> recv_history_;
-    bool read_complete_;
-
-    // TODO! figure out why an RDMA READ attempt result in receiving an
-    // empty string in here...
-    bool ProcessRDMAWC(ibv_wc_opcode type, uint64_t wr_id, int remote_server_id,
-                  char *sendBuffer, uint32_t imm_data) override {
-        string instruction(sendBuffer);
-        RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:\"{}\" imm:{}",
-                                      ibv_wc_opcode_str(type), wr_id,
-                                      remote_server_id, bufContent, imm_data);
-		if (type == IBV_WC_RDMA_READ) {
-            RDMA_LOG(INFO) << fmt::format(" READ COMPLETED, instruction:\"{}\"", instruction);
-            std::unordered_map<string, RdmaReadRequest>::iterator it;
-            RdmaReadRequest request = hmap.find(instruction);
-            std::lock_guard<std::mutex> lk(request.readMutex);
-            request.cv.notify_all();
-            RDMA_LOG(INFO) << fmt::format(" notify thread, instruction:\"{}\"", instruction);
-        }
-        return true;
-    }
-};
