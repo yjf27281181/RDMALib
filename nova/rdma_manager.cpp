@@ -40,7 +40,7 @@ void RDMAManager::Start() {
 	}
 }
 
-void RDMAManager::addRequestToQueue(RdmaReadRequest request) {
+void RDMAManager::addRequestToQueue(RdmaReadRequest* request) {
 	addPopMutex.lock();
 	readRequests.push(request);
 	addPopMutex.unlock();
@@ -54,12 +54,12 @@ RdmaReadRequest RDMAManager::popRequestFromQueue() {
 }
 
 
-string RDMAManager::readContentFromRDMA(RdmaReadRequest readRequest) {
+string RDMAManager::readContentFromRDMA(RdmaReadRequest* request) {
     // TODO how do I do sanity check?
     // TODO faster (index-based) instruction argument parsing?
 
     assert(instruction.substr(0, 5) == "P2GET"); // TODO remove?
-    stringstream ss(request.instruction.c_str());
+    stringstream ss(request->instruction.c_str());
     string command;
     ss >> command; // TODO command gets "P2GET", how to skip this?
     int supplierServerID;
@@ -69,7 +69,7 @@ string RDMAManager::readContentFromRDMA(RdmaReadRequest readRequest) {
     uint32_t length;
     ss >> length;
     char* sendBuffer = broker_->getSendBuff(supplierServerID);
-    memcpy(sendBuffer, request.instruction);
+    memcpy(sendBuffer, request->instruction);
     RDMA_LOG(INFO) << fmt::format("ExecuteRDMARead(): supplier_server_id: {}, mem_addr: {}, length: {}", supplierServerID, memAddr, length);
     uint64_t wr_id = broker_->PostRead(readbuf_, length, supplierServerID, 0, memAddr, false); // trying with "true" for is_remote_offset
 	broker_->FlushPendingSends(supplierServerID);
