@@ -36,6 +36,7 @@ void RDMAManager::Start() {
 			RdmaReadRequest* curRequest = popRequestFromQueue();
 			p2mc_->hmap.insert(pair<string,RdmaReadRequest*>(curRequest->instruction,curRequest));
 			RDMA_LOG(INFO) << fmt::format("get first request {}", curRequest->instruction);
+			readContentFromRDMA(curRequest);
 		}
 		broker_->PollRQ();
         broker_->PollSQ();
