@@ -113,6 +113,7 @@ int main(int argc, char *argv[]) {
     RdmaReadRequest* rdmaRequest = new RdmaReadRequest(instruction, buffertest);
     RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
     rdmaManager->addRequestToQueue(rdmaRequest);
+    RDMA_LOG(INFO) << fmt::format("have add request to queue");
     getchar();
     return 0;
 }
