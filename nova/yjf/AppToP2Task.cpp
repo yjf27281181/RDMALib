@@ -77,5 +77,6 @@ char * AppToP2Task::constructRedisReturn(string str)
 	res.append(str); 
 	res.push_back((char)13); //carriage return 
 	res.push_back((char)10); //carriage return 
+	RDMA_LOG(INFO) << fmt::format("construct instruction {}", res);
 	return (char*)res.data();
 }
