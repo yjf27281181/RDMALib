@@ -1,7 +1,7 @@
 #pragma once
 #include "AppToP2Task.h"
 #include "Thread.h"
-#include "AppToP2Task.h"
+#include "rdma_manager.h"
 class AppToP2Server : public CTask
 {
 public:

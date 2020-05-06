@@ -4,7 +4,7 @@
 #include "BasicConnection.h"
 #include <vector>
 #include <iostream>
-#include "AppToP2Task.h"
+#include "rdma_manager.h"
 using namespace std;
 class AppToP2Task : public CTask
 {
