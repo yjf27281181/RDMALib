@@ -48,6 +48,7 @@ int AppToP2Task::Run()
 		char content[] = "testContent";
 		uint32_t scid = rdmaManager->nmm_->slabclassid(0, 1000);
     	char *writeBuffer = rdmaManager->nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
+    	rdmaManager->nmm_->FreeItem(0, writeBuffer, scid);
     	memcpy(writeBuffer, content, strlen(content));
 		if (cmd == "GET" && isNetworkBusy) {
 			string instruction = rdmaManager->writeContentToRDMA(writeBuffer);
