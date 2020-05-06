@@ -42,6 +42,9 @@ target_sources(rdmalib
         nova/nova_rdma_broker.h
         nova/nova_mem_manager.cpp
         nova/nova_mem_manager.h
+        nova/rdma_manager.cpp
+        nova/rdma_manager.h
+        nova/nova_mem_manager.h
         )
 # Needed by port_stdcxx.h
 find_package(Threads REQUIRED)
