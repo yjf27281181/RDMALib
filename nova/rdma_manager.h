@@ -45,7 +45,6 @@ class P2MsgCallback : public NovaMsgCallback {
 private:
     std::condition_variable cv;
 public:
-    P2MsgCallback();
     unordered_map<string,RdmaReadRequest*> hmap;
     // used to record received message
     deque<string> recv_history_;
