@@ -33,7 +33,7 @@ void RDMAManager::Start() {
 	while(true) {
 		if(readRequests.size() > 0) {
 			RdmaReadRequest* curRequest = popRequestFromQueue();
-			p2mc_->hmap.insert(pair<string,RdmaReadRequest>(curRequest->instruction,curRequest));
+			p2mc_->hmap.insert(pair<string,*RdmaReadRequest>(curRequest->instruction,curRequest));
 		}
 		broker_->PollRQ();
         broker_->PollSQ();

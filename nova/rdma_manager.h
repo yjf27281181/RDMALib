@@ -17,16 +17,16 @@ using namespace std;
 using namespace rdmaio;
 using namespace nova;
 
-DEFINE_string(servers);
-DEFINE_int64(server_id);
+DECLARE_string(servers);
+DECLARE_int64(server_id);
 
-DEFINE_uint64(mem_pool_size_gb);
+DECLARE_uint64(mem_pool_size_gb);
 
-DEFINE_uint64(rdma_port);
-DEFINE_uint64(rdma_max_msg_size);
-DEFINE_uint64(rdma_max_num_sends);
-DEFINE_uint64(rdma_doorbell_batch_size);
-DEFINE_uint32(nrdma_workers);
+DECLARE_uint64(rdma_port);
+DECLARE_uint64(rdma_max_msg_size);
+DECLARE_uint64(rdma_max_num_sends);
+DECLARE_uint64(rdma_doorbell_batch_size);
+DECLARE_uint32(nrdma_workers);
 
 class RdmaReadRequest {
 public:
@@ -46,7 +46,7 @@ private:
     std::condition_variable cv;
 public:
     P2MsgCallback();
-    unordered_map<string,RdmaReadRequest> hmap;
+    unordered_map<string,*RdmaReadRequest> hmap;
     // used to record received message
     deque<string> recv_history_;
     bool read_complete_;
@@ -62,7 +62,7 @@ public:
         if (type == IBV_WC_RDMA_READ) {
             RDMA_LOG(INFO) << fmt::format(" READ COMPLETED, instruction:\"{}\"", instruction);
 
-            std::unordered_map<string, RdmaReadRequest>::iterator it;
+            std::unordered_map<string, *RdmaReadRequest>::iterator it;
             it = hmap.find(instruction);
             if( it == hmap.end() ) {
                 RDMA_LOG(INFO) << fmt::format("wrong, instruction not found, instruction is:\"{}\"", instruction);
