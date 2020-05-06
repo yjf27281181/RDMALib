@@ -99,9 +99,9 @@ public:
     void addRequestToQueue(RdmaReadRequest *request);
     RdmaReadRequest* popRequestFromQueue();
     void Start();
-    
-private:
     NovaMemManager *nmm_;
+private:
+    
     NovaRDMARCBroker *broker_;
     char *readbuf_;
     RdmaCtrl *ctrl_;
