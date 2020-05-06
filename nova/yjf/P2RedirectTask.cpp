@@ -2,7 +2,7 @@
 #include "BasicConnection.h"
 
 
-P2RedirectTask::P2RedirectTask(BasicConnection* clientConnection, char* buffer, int from_app_len, int client_socket)
+P2RedirectTask::P2RedirectTask(BasicConnection* clientConnection, char* buffer, int from_app_len, int client_socket, RDMAManager *rdmaManager)
 {
 	this->clientConnection = clientConnection;
 	int bufferLen = 1024;
@@ -12,6 +12,7 @@ P2RedirectTask::P2RedirectTask(BasicConnection* clientConnection, char* buffer, 
 	}
 	this->from_app_len = from_app_len;
 	this->client_socket = client_socket;
+	this->rdmaManager = rdmaManager;;
 }
 
 int P2RedirectTask::Run()
@@ -34,24 +35,13 @@ int P2RedirectTask::Run()
 		command.erase(0, pos + delimiter.length());
 	}
 	
-	string redirectCommand = commands[4];
-	delimiter = "#";
-
-	pos = 0;
-	commands.clear();
-	while ((pos = redirectCommand.find(delimiter)) != std::string::npos) {
-		token = redirectCommand.substr(0, pos);
-		commands.push_back(token);
-		redirectCommand.erase(0, pos + delimiter.length());
-	
-	}
-	commands.push_back(redirectCommand);
-	cout << "command type:" << commands[0] << endl;
-	cout << "redis name:" << commands[1] << endl;
-	cout << "memery address:" << commands[2] << endl;
-	cout << "memery offset:" << commands[3] << endl;
-	cout << "data length:" << commands[4] << endl;
-
+	string instruction = commands[4];
+	char writeBuffer[1000];
+	RdmaReadRequest* request = new RdmaReadRequest(instruction, buffer);
+	std::unique_lock<std::mutex> lock(mutex);
+	request->cv.wait(lock, [] { return strlen(writeBuffer) > 0; });
+	RDMA_LOG(INFO) << fmt::format("writeBuffer content {}", writeBuffer);
+	clientConnection->sendMsgToServer(writeBuffer, strlen(buffer), buffer, client_socket);
 	// using above information to get data from rdma:
 
 	return 0;

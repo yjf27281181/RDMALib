@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     CThreadPool Pool(5);
 	CTask* appToP2Server = new AppToP2Server(rdmaManager);
 	Pool.AddTask(appToP2Server);
-	CTask* p2RedirectServer = new P2RedirectServer();
+	CTask* p2RedirectServer = new P2RedirectServer(rdmaManager);
 	Pool.AddTask(p2RedirectServer);
     getchar();
     return 0;

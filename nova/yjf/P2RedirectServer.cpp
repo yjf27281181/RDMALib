@@ -2,9 +2,10 @@
 #include "BasicConnection.h"
 
 
-P2RedirectServer::P2RedirectServer()
+P2RedirectServer::P2RedirectServer(RDMAManager *rdmaManager)
 {
 	this->Pool = new CThreadPool(10);
+	this->rdmaManager = rdmaManager
 }
 
 int P2RedirectServer::Run()
@@ -17,8 +18,7 @@ int P2RedirectServer::Run()
 
 		int client_socket = clientConnection->acceptContent();
 		int from_app_len = read(client_socket, buffer, 1024);
-		printf("chakan buffer content %s", buffer);
-		Pool->AddTask(new P2RedirectTask(clientConnection, buffer, from_app_len, client_socket));
+		Pool->AddTask(new P2RedirectTask(clientConnection, buffer, from_app_len, client_socket, rdmaManager));
 	}
 	return 0;
 }
