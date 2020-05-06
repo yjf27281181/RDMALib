@@ -46,8 +46,11 @@ int AppToP2Task::Run()
 		//cout << "from_redis: " << from_redis << endl;
 		//if network is busy and the command is get, redirect
 		char content[] = "testContent";
+		uint32_t scid = rdmaManager->nmm_->slabclassid(0, 1000);
+    	char *writeBuffer = rdmaManager->nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
+    	memcpy(writeBuffer, content, strlen(content));
 		if (cmd == "GET" && isNetworkBusy) {
-			string instruction = rdmaManager->writeContentToRDMA(content);
+			string instruction = rdmaManager->writeContentToRDMA(writeBuffer);
 			
 			//save the content in the rdma, return address, offset, length to the p2 client.
 			string redirectCmd = constructRedisReturn(instruction); //return sample
