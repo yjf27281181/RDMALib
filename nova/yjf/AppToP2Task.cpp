@@ -48,10 +48,11 @@ int AppToP2Task::Run()
 		char content[] = "testContent";
 		if (cmd == "GET" && isNetworkBusy) {
 			string instruction = rdmaManager->writeContentToRDMA(content);
-			RDMA_LOG(INFO) << fmt::format("apptop2task(): instruction {}", instruction);
+			
 			//save the content in the rdma, return address, offset, length to the p2 client.
 			char* redirectCmd = constructRedisReturn("redirect#redis01#1023423#0#1024"); //return sample
 			int cmd_len = strlen(redirectCmd);
+			RDMA_LOG(INFO) << fmt::format("apptop2task(): instruction {}", redirectCmd);
 			clientConnection->sendMsgToServer(redirectCmd, cmd_len, buffer, client_socket);
 		}
 		else {
