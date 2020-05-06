@@ -30,7 +30,6 @@ int P2RedirectTask::Run()
 	vector<std::string> commands;
 	while ((pos = command.find(delimiter)) != std::string::npos) {
 		token = command.substr(0, pos);
-		cout <<"token: " << token << endl;
 		commands.push_back(token);
 		command.erase(0, pos + delimiter.length());
 	}
@@ -38,6 +37,7 @@ int P2RedirectTask::Run()
 	string instruction = commands[4];
 	char writeBuffer[1000];
 	RdmaReadRequest* request = new RdmaReadRequest(instruction, buffer);
+	rdmaManager.addRequestToQueue(request);
 	std::unique_lock<std::mutex> lock(request->readMutex);
 	request->cv.wait(lock);
 	RDMA_LOG(INFO) << fmt::format("writeBuffer content {}", writeBuffer);
