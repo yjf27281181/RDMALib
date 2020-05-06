@@ -35,8 +35,8 @@ int P2RedirectTask::Run()
 	}
 	
 	string instruction = commands[4];
-	uint32_t scid = nmm_->slabclassid(0, 1000);
-    char *writeBuffer = nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
+	uint32_t scid = rdmaManager->nmm_->slabclassid(0, 1000);
+    char *writeBuffer = rdmaManager->nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
 	RdmaReadRequest* request = new RdmaReadRequest(instruction, buffer);
 	rdmaManager->addRequestToQueue(request);
 	std::unique_lock<std::mutex> lock(request->readMutex);
