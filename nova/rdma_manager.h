@@ -11,12 +11,22 @@
 #include <queue>
 
 #include<unordered_map>
+#include <boost/lexical_cast.hpp>
 #include <mutex>
 using namespace std;
 using namespace rdmaio;
 using namespace nova;
 
+DEFINE_string(servers);
+DEFINE_int64(server_id);
 
+DEFINE_uint64(mem_pool_size_gb);
+
+DEFINE_uint64(rdma_port);
+DEFINE_uint64(rdma_max_msg_size);
+DEFINE_uint64(rdma_max_num_sends);
+DEFINE_uint64(rdma_doorbell_batch_size);
+DEFINE_uint32(nrdma_workers);
 
 class RdmaReadRequest {
 public:
@@ -87,7 +97,7 @@ public:
     string writeContentToRDMA(char* content);
     string readContentFromRDMA(RdmaReadRequest *readRequest);
     void addRequestToQueue(RdmaReadRequest *request);
-    RdmaReadRequest popRequestFromQueue();
+    RdmaReadRequest* popRequestFromQueue();
     void Start();
     
 private:
