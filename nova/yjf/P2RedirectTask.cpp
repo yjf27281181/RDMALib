@@ -37,7 +37,7 @@ int P2RedirectTask::Run()
 	string instruction = commands[4];
 	char writeBuffer[1000];
 	RdmaReadRequest* request = new RdmaReadRequest(instruction, buffer);
-	rdmaManager.addRequestToQueue(request);
+	rdmaManager->addRequestToQueue(request);
 	std::unique_lock<std::mutex> lock(request->readMutex);
 	request->cv.wait(lock);
 	RDMA_LOG(INFO) << fmt::format("writeBuffer content {}", writeBuffer);
