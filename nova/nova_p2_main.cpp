@@ -103,7 +103,7 @@ private:
 
 RDMAManager::RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_) {
 	this->nmm_ = mem_manager;
-	this->p2mc_ = new P2MsgCallback;
+	this->p2mc_ = new P2MsgCallback();
 	uint32_t scid = nmm_->slabclassid(500, 2000); // using 200 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
     this->readbuf_ = nmm_->ItemAlloc(0, scid);
     this->broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
@@ -246,6 +246,9 @@ int main(int argc, char *argv[]) {
     string instruction = rdmaManager->writeContentToRDMA(content);
     RDMA_LOG(INFO) << fmt::format("main(): instruction {}", instruction);
     rdmaManager->readContentFromRDMA(instruction);
-    getchar();
+    while(true) {
+    	broker_->PollRQ();
+        broker_->PollSQ();
+    }
     return 0;
 }
