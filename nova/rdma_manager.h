@@ -85,8 +85,8 @@ class RDMAManager {
 public:
     RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_);
     string writeContentToRDMA(char* content);
-    string readContentFromRDMA(RdmaReadRequest readRequest);
-    void addRequestToQueue(RdmaReadRequest request);
+    string readContentFromRDMA(RdmaReadRequest *readRequest);
+    void addRequestToQueue(RdmaReadRequest *request);
     RdmaReadRequest popRequestFromQueue();
     void Start();
     
@@ -99,7 +99,7 @@ private:
     char *rdma_backing_mem_;
     char *circular_buffer_;
     P2MsgCallback* p2mc_;
-    std::queue<RdmaReadRequest> readRequests;
+    std::queue<RdmaReadRequest*> readRequests;
     mutex addPopMutex;
     
 };
