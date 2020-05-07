@@ -3,7 +3,7 @@
 
 RDMAManager::RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_) {
 	this->nmm_ = mem_manager;
-	this->p2mc_ = new P2MsgCallback(mem_manager);
+	this->p2mc_ = new P2MsgCallback(mem_manager, );
 	uint32_t scid = nmm_->slabclassid(0, 1000); // using 200 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
     this->readbuf_ = nmm_->ItemAlloc(0, scid);
     this->broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
@@ -18,6 +18,7 @@ RDMAManager::RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vect
                                     1024 * 1024,
                                     FLAGS_rdma_port,
                                     p2mc_);
+    this->p2mc_->broker_ = this->broker_;
     this->ctrl_ = ctrl_;
     this->endpoints_ = endpoints_;
     this->rdma_backing_mem_ = rdma_backing_mem_;
@@ -110,7 +111,7 @@ string RDMAManager::writeContentToRDMA(char* content) {
     instruction += boost::lexical_cast<std::string>((uint64_t)buf);
     instruction += " ";
     instruction += std::to_string(strlen(content));
-    p2mc_->scid_map.insert(pair<string,uint32_t>(curRequest->instruction,scid));
-    p2mc_->buffer_map.insert(pair<string,char*>(curRequest->instruction,buf));
+    p2mc_->scid_map.insert(pair<string,uint32_t>(instruction,scid));
+    p2mc_->buffer_map.insert(pair<string,char*>(instruction,buf));
     return instruction;
 }

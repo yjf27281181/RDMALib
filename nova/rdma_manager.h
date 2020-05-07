@@ -46,12 +46,12 @@ class P2MsgCallback : public NovaMsgCallback {
 private:
     std::condition_variable cv;
     NovaMemManager * nmm_;
-    NovaRDMARCBroker *broker_;
+   
 public:
-    P2MsgCallback(NovaMemManager * nmm_, NovaRDMARCBroker *broker_) {
+    P2MsgCallback(NovaMemManager * nmm_) {
         this->nmm_ = nmm_;
-        this->broker_ = broker_;
     }
+    NovaRDMARCBroker *broker_;
     unordered_map<string,RdmaReadRequest*> hmap;
     unordered_map<string,uint32_t> scid_map;
     unordered_map<string,char*> buffer_map;
@@ -75,7 +75,7 @@ public:
             if( it_scid == scid_map.end() || it_buffer == buffer_map.end()) {
                 RDMA_LOG(INFO) << fmt::format("wrong,trying to free memory, key not found [], key is:\"{}\"", instruction);
             } else {
-                nmm_->FreeItem(0, it_buffer->second, scid->second);
+                nmm_->FreeItem(0, it_buffer->second, it_scid->second);
             }
 
             
@@ -95,7 +95,8 @@ public:
                 RDMA_LOG(INFO) << fmt::format(" notify thread, instruction:\"{}\"", instruction);
                 hmap.erase(instruction);
 
-                //notify server node to free memerystringstream ss(request->instruction.c_str());
+                //notify server node to free memerystringstream 
+                ss(request->instruction.c_str());
                 string command;
                 ss >> command; // TODO command gets "P2GET", how to skip this?
                 int supplierServerID;
@@ -106,8 +107,8 @@ public:
                 ss >> length;
                 char* supplierSendBuffer = broker_->GetSendBuf(supplierServerID);
                 memcpy(supplierSendBuffer, sendBuffer, strlen(sendBuffer));
-                uint64_t wr_id = broker->PostSend(supplierSendBuffer, strlen(supplierSendBuffer), server_id, 1);
-                broker->FlushPendingSends(supplierServerID);
+                uint64_t wr_id = broker_->PostSend(supplierSendBuffer, strlen(supplierSendBuffer), supplierServerID, 1);
+                broker_->FlushPendingSends(supplierServerID);
             }
             
         }
