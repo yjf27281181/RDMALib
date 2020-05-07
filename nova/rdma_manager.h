@@ -95,8 +95,8 @@ public:
                 RDMA_LOG(INFO) << fmt::format(" notify thread, instruction:\"{}\"", instruction);
                 hmap.erase(instruction);
 
-                //notify server node to free memerystringstream 
-                ss(request->instruction.c_str());
+                //notify server node to free memery
+                stringstream ss(instruction.c_str());
                 string command;
                 ss >> command; // TODO command gets "P2GET", how to skip this?
                 int supplierServerID;
