@@ -76,7 +76,11 @@ public:
                 RDMA_LOG(INFO) << fmt::format("wrong,trying to free memory, key not found [], key is:\"{}\"", instruction);
             } else {
                 nmm_->FreeItem(0, it_buffer->second, it_scid->second);
+                scid_map.erase(instruction);
+                buffer_map.erase(instruction);
             }
+
+
 
             
         }
