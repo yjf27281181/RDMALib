@@ -2,15 +2,9 @@
 #include "BasicConnection.h"
 
 
-P2RedirectTask::P2RedirectTask(BasicConnection* clientConnection, char* buffer, int from_app_len, int client_socket, RDMAManager *rdmaManager)
+P2RedirectTask::P2RedirectTask(BasicConnection* clientConnection, int client_socket, RDMAManager *rdmaManager)
 {
 	this->clientConnection = clientConnection;
-	int bufferLen = 1024;
-	this->buffer = new char[bufferLen];
-	for (int i = 0; i < bufferLen; i++) {
-		this->buffer[i] = buffer[i];
-	}
-	this->from_app_len = from_app_len;
 	this->client_socket = client_socket;
 	this->rdmaManager = rdmaManager;
 }

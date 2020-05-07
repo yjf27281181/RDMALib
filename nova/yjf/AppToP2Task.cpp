@@ -5,7 +5,6 @@
 AppToP2Task::AppToP2Task(BasicConnection* clientConnection, int client_socket, RDMAManager *rdmaManager)
 {
 	this->clientConnection = clientConnection;
-	this->from_app_len = from_app_len;
 	this->client_socket = client_socket;
 	this->rdmaManager = rdmaManager;
 }
