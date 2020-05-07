@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
 	std::thread t(&RDMAManager::Start, rdmaManager);
 
     //run server
-    CThreadPool Pool(5);
+    CThreadPool Pool(2);
 	CTask* appToP2Server = new AppToP2Server(rdmaManager);
 	Pool.AddTask(appToP2Server);
 	CTask* p2RedirectServer = new P2RedirectServer(rdmaManager);

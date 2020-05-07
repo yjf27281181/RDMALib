@@ -65,7 +65,7 @@ void* CThreadPool::ThreadFunc(void* threadData)
 			pthread_exit(NULL);
 		}
 
-		printf("tid %lu run\n", tid);
+		printf("tid !!!! %lu run\n", tid);
 
 		/**
 		* 取任务队列并处理之
@@ -110,7 +110,6 @@ int CThreadPool::Create()
 	pthread_id = (pthread_t*)malloc(sizeof(pthread_t) * m_iThreadNum);
 	for (int i = 0; i < m_iThreadNum; i++)
 	{
-		printf("create thread, thread id: %lu \n", &pthread_id[i]);
 		pthread_create(&pthread_id[i], NULL, ThreadFunc, NULL);
 	}
 	return 0;
