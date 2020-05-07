@@ -26,12 +26,12 @@ public:
 	//向另一端发送数据，socket == -1 表示是p2向reids发送请求，socket有值表示p2向已建立链接的socket发送请求
 	int sendMsgToServer(char* buffer, int buffer_len, char* buffer_from_server, int socket); //return length of msg
 	~BasicConnection();
-
+	int server_fd;
 private:
 	struct sockaddr_in address;
 	int opt = 1;
 	int addrlen;
-	int server_fd;
+	
 	char* ip;
 };
 
