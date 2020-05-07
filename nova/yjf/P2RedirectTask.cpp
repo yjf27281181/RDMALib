@@ -43,15 +43,15 @@ int P2RedirectTask::Run()
 	std::unique_lock<std::mutex> lock(request->readMutex);
 	request->cv.wait(lock);
 	RDMA_LOG(INFO) << fmt::format("writeBuffer content {}", writeBuffer);
-	string contentFromRDMA(writeBuffer);
-	string redisReturn = constructRedisReturn(contentFromRDMA);
-	int res_len = redisReturn.length();
-	char res_char_arry[redisReturn.length()]; 
+	// string contentFromRDMA(writeBuffer);
+	// string redisReturn = constructRedisReturn(contentFromRDMA);
+	// int res_len = redisReturn.length();
+	// char res_char_arry[redisReturn.length()]; 
 
-	for (int i = 0; i < sizeof(res_char_arry); i++) { 
-		res_char_arry[i] = redisReturn[i]; 
-	} 
-	clientConnection->sendMsgToServer(res_char_arry, res_len, buffer, client_socket);
+	// for (int i = 0; i < sizeof(res_char_arry); i++) { 
+	// 	res_char_arry[i] = redisReturn[i]; 
+	// } 
+	clientConnection->sendMsgToServer(writeBuffer, strlen(writeBuffer), buffer, client_socket);
 	// using above information to get data from rdma:
 
 	return 0;

@@ -12,8 +12,8 @@ AppToP2Task::AppToP2Task(BasicConnection* clientConnection, int client_socket, R
 
 int AppToP2Task::Run()
 {
-	//BasicConnection * redisConnection = new BasicConnection("192.168.0.200", 7000);
-	//redisConnection->connectToServer();
+	BasicConnection * redisConnection = new BasicConnection("127.0.0.1", 6379);
+	redisConnection->connectToServer();
 	printf("in apptop2task run\n");
 	while (true) {
 		int from_app_len = read(client_socket, buffer, 1024);
@@ -39,15 +39,14 @@ int AppToP2Task::Run()
 			command.erase(0, pos + delimiter.length());
 		}
 		string cmd = commands[2];
-		cout << "show command:" << cmd << endl;
-		cout << "app buffer content:" << buffer << endl;
-		//int len_from_redis = redisConnection->sendMsgToServer(buffer, from_app_len, from_redis, -1);
-		bool isNetworkBusy = true;
+		int len_from_redis = redisConnection->sendMsgToServer(buffer, from_app_len, from_redis, -1);
+		RDMA_LOG(INFO) << fmt::format("redis buffer {}", from_redis);
+		bool isNetworkBusy = false;
 		//cout << "from_redis: " << from_redis << endl;
 		//if network is busy and the command is get, redirect
-		char content[] = "testContent";
+		//char content[] = "testContent";
 		if (cmd == "GET" && isNetworkBusy) {
-			string instruction = rdmaManager->writeContentToRDMA(content);
+			string instruction = rdmaManager->writeContentToRDMA(from_redis);
 			
 			//save the content in the rdma, return address, offset, length to the p2 client.
 			string redirectCmd = constructRedisReturn(instruction); //return sample
@@ -60,7 +59,7 @@ int AppToP2Task::Run()
 			clientConnection->sendMsgToServer(cmd_char_arry, cmd_len, buffer, client_socket);
 		}
 		else {
-			//clientConnection->sendMsgToServer(from_redis, len_from_redis, buffer, client_socket);
+			clientConnection->sendMsgToServer(from_redis, len_from_redis, buffer, client_socket);
 		}
 	}
 	return 0;
