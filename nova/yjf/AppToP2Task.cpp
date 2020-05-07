@@ -40,6 +40,8 @@ int AppToP2Task::Run()
 		string cmd = commands[2];
 		string key = commands[4];
 		if(strcmp(key.c_str(),string("#exit").c_str()) == 0) {
+			char exit[] = "#exit";
+			clientConnection->sendMsgToServer(exit, strlen(exit), buffer, client_socket);
 			close(clientConnection->server_fd);  
             break;
 		}

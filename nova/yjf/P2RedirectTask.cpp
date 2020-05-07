@@ -35,6 +35,8 @@ int P2RedirectTask::Run()
 
 		string instruction = commands[4];
 		if(strcmp(instruction.c_str(),string("#exit").c_str()) == 0) {
+			char exit[] = "#exit";
+			clientConnection->sendMsgToServer(exit, strlen(exit), buffer, client_socket);
 			close(clientConnection->server_fd);  
             break;
 		}
