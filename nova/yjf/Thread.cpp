@@ -110,6 +110,7 @@ int CThreadPool::Create()
 	pthread_id = (pthread_t*)malloc(sizeof(pthread_t) * m_iThreadNum);
 	for (int i = 0; i < m_iThreadNum; i++)
 	{
+		printf("create thread, thread id: %lu \n", tid);
 		pthread_create(&pthread_id[i], NULL, ThreadFunc, NULL);
 	}
 	return 0;
