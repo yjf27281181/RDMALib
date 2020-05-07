@@ -35,8 +35,14 @@ int P2RedirectTask::Run()
 
 		string instruction = commands[4];
 		if(strcmp(instruction.c_str(),string("#exit").c_str()) == 0) {
-			char exit[] = "#exit";
-			clientConnection->sendMsgToServer(exit, strlen(exit), buffer, client_socket);
+			string constrcutRes = constructRedisReturn("#exit");
+			int res_len = constrcutRes.length();
+			char res_char_arry[constrcutRes.length()]; 
+
+			for (int i = 0; i < sizeof(res_char_arry); i++) { 
+				res_char_arry[i] = constrcutRes[i]; 
+			} 
+			clientConnection->sendMsgToServer(res_char_arry, strlen(res_char_arry), buffer, client_socket);
 			close(clientConnection->server_fd);  
             break;
 		}
@@ -49,12 +55,7 @@ int P2RedirectTask::Run()
 		RDMA_LOG(INFO) << fmt::format("writeBuffer content {}", writeBuffer);
 		// string contentFromRDMA(writeBuffer);
 		// string redisReturn = constructRedisReturn(contentFromRDMA);
-		// int res_len = redisReturn.length();
-		// char res_char_arry[redisReturn.length()]; 
-
-		// for (int i = 0; i < sizeof(res_char_arry); i++) { 
-		// 	res_char_arry[i] = redisReturn[i]; 
-		// } 
+		
 		clientConnection->sendMsgToServer(writeBuffer, strlen(writeBuffer), buffer, client_socket);
 		rdmaManager->nmm_->FreeItem(0, writeBuffer, scid);
 		// using above information to get data from rdma:
@@ -74,7 +75,7 @@ string P2RedirectTask::constructRedisReturn(string str) {
 	res.append(str); 
 	res.push_back((char)13); //carriage return 
 	res.push_back((char)10); //carriage return 
-	RDMA_LOG(INFO) << fmt::format("construct instruction {}", res);
+
 	return res;
 }
 
