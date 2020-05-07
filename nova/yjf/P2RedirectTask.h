@@ -11,7 +11,7 @@ using namespace std;
 class P2RedirectTask : public CTask
 {
 public:
-	P2RedirectTask(BasicConnection* clientConnection, char* buffer, int from_app_len, int client_socket, RDMAManager *rdmaManager);
+	P2RedirectTask(BasicConnection* clientConnection, int client_socket, RDMAManager *rdmaManager);
 	int Run();
 	~P2RedirectTask();
 private:
