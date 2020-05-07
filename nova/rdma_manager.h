@@ -45,11 +45,17 @@ public:
 class P2MsgCallback : public NovaMsgCallback {
 private:
     std::condition_variable cv;
+    NovaMemManager * nmm_;
+    NovaRDMARCBroker *broker_;
 public:
+    P2MsgCallback(NovaMemManager * nmm_, NovaRDMARCBroker *broker_) {
+        this->nmm_ = nmm_;
+        this->broker_ = broker_;
+    }
     unordered_map<string,RdmaReadRequest*> hmap;
+    unordered_map<string,uint32_t> scid_map;
+    unordered_map<string,char*> buffer_map;
     // used to record received message
-    deque<string> recv_history_;
-    bool read_complete_;
 
     // TODO! figure out why an RDMA READ attempt result in receiving an
     // empty string in here...
@@ -59,6 +65,22 @@ public:
         RDMA_LOG(INFO) << fmt::format("t:{} wr:{} remote:{} buf:\"{}\" imm:{}",
                                       ibv_wc_opcode_str(type), wr_id,
                                       remote_server_id, instruction, imm_data);
+
+        if (type == IBV_WC_RECV) {
+            RDMA_LOG(INFO) << fmt::format("trying to free memery:\"{}\"", instruction);
+            std::unordered_map<string, uint32_t>::iterator it_scid;
+            std::unordered_map<string, char*>::iterator it_buffer;
+            it_scid = scid_map.find(instruction);
+            it_buffer = buffer_map.find(instruction);
+            if( it_scid == scid_map.end() || it_buffer == buffer_map.end()) {
+                RDMA_LOG(INFO) << fmt::format("wrong,trying to free memory, key not found [], key is:\"{}\"", instruction);
+            } else {
+                nmm_->FreeItem(0, it_buffer->second, scid->second);
+            }
+
+            
+        }
+
         if (type == IBV_WC_RDMA_READ) {
             RDMA_LOG(INFO) << fmt::format(" READ COMPLETED, instruction:\"{}\"", instruction);
 
@@ -72,6 +94,20 @@ public:
                 request->cv.notify_all();
                 RDMA_LOG(INFO) << fmt::format(" notify thread, instruction:\"{}\"", instruction);
                 hmap.erase(instruction);
+
+                //notify server node to free memerystringstream ss(request->instruction.c_str());
+                string command;
+                ss >> command; // TODO command gets "P2GET", how to skip this?
+                int supplierServerID;
+                ss >> supplierServerID;
+                uint64_t memAddr;
+                ss >> memAddr;
+                uint32_t length;
+                ss >> length;
+                char* supplierSendBuffer = broker_->GetSendBuf(supplierServerID);
+                memcpy(supplierSendBuffer, sendBuffer, strlen(sendBuffer));
+                uint64_t wr_id = broker->PostSend(supplierSendBuffer, strlen(supplierSendBuffer), server_id, 1);
+                broker->FlushPendingSends(supplierServerID);
             }
             
         }

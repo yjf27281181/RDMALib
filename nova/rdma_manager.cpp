@@ -3,7 +3,7 @@
 
 RDMAManager::RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_) {
 	this->nmm_ = mem_manager;
-	this->p2mc_ = new P2MsgCallback();
+	this->p2mc_ = new P2MsgCallback(mem_manager);
 	uint32_t scid = nmm_->slabclassid(0, 1000); // using 200 ( >> 40) results in a different slab class which doesn't collide with *readbuf from main()
     this->readbuf_ = nmm_->ItemAlloc(0, scid);
     this->broker_ = new NovaRDMARCBroker(circular_buffer_, 0,
@@ -101,7 +101,6 @@ string RDMAManager::writeContentToRDMA(char* content) {
 	uint32_t scid = nmm_->slabclassid(0, 200);
     char *buf = nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     memcpy(buf, content, 200);
-    nmm_->FreeItem(0, buf, scid);
     // finally free it
     // nmm_->FreeItem(0, buf, scid);
     string instruction = "P2GET";
@@ -111,5 +110,7 @@ string RDMAManager::writeContentToRDMA(char* content) {
     instruction += boost::lexical_cast<std::string>((uint64_t)buf);
     instruction += " ";
     instruction += std::to_string(strlen(content));
+    p2mc_->scid_map.insert(pair<string,uint32_t>(curRequest->instruction,scid));
+    p2mc_->buffer_map.insert(pair<string,char*>(curRequest->instruction,buf));
     return instruction;
 }
