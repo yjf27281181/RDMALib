@@ -38,6 +38,11 @@ int AppToP2Task::Run()
 			command.erase(0, pos + delimiter.length());
 		}
 		string cmd = commands[2];
+		string key = commands[4];
+		if(strcmp(key.c_str(),string("#exit").c_str()) == 0) {
+			close(clientConnection->server_fd);  
+            break;
+		}
 		int len_from_redis = redisConnection->sendMsgToServer(buffer, from_app_len, from_redis, -1);
 		RDMA_LOG(INFO) << fmt::format("redis buffer {}", from_redis);
 		bool isNetworkBusy = true;
