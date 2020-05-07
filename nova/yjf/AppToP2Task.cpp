@@ -40,8 +40,14 @@ int AppToP2Task::Run()
 		string cmd = commands[2];
 		string key = commands[4];
 		if(strcmp(key.c_str(),string("#exit").c_str()) == 0) {
-			char exit[] = "#exit";
-			clientConnection->sendMsgToServer(exit, strlen(exit), buffer, client_socket);
+			string constrcutRes = constructRedisReturn("#exit");
+			int res_len = constrcutRes.length();
+			char res_char_arry[constrcutRes.length()]; 
+
+			for (int i = 0; i < sizeof(res_char_arry); i++) { 
+				res_char_arry[i] = constrcutRes[i]; 
+			} 
+			clientConnection->sendMsgToServer(res_char_arry, strlen(res_char_arry), buffer, client_socket);
 			close(clientConnection->server_fd);  
             break;
 		}
