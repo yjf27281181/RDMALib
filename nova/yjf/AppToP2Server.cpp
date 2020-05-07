@@ -4,7 +4,7 @@
 
 AppToP2Server::AppToP2Server(RDMAManager *rdmaManager)
 {
-	this->Pool = new CThreadPool(2);
+	this->Pool = new CThreadPool(1);
 	this->rdmaManager = rdmaManager;
 }
 
