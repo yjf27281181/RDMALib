@@ -21,14 +21,13 @@ int AppToP2Task::Run()
 		}
 		char from_redis[1024] = { 0 };
 		/*send back a redirect msg*/
-		int len_from_redis = redisConnection->sendMsgToServer(buffer, from_app_len, from_redis, -1);
-		RDMA_LOG(INFO) << fmt::format("redis buffer {}", from_redis);
+		
 		clientConnection->sendMsgToServer(from_redis, len_from_redis, buffer, client_socket);
-		continue;
 		string command(buffer);
 		string delimiter = "";
 		delimiter.push_back((char)13);
 		delimiter.push_back((char)10);
+
 		size_t pos = 0;
 		string token;
 		vector<std::string> commands;
@@ -39,6 +38,9 @@ int AppToP2Task::Run()
 		}
 		string key = "";
 		string cmd = commands[2];
+		if(cmd == "COMMAND") {
+			break;
+		}
 		if(commands.size() > 4) {
 			key = commands[4];
 		}
@@ -54,7 +56,8 @@ int AppToP2Task::Run()
 			close(clientConnection->server_fd);  
             break;
 		}
-		
+		int len_from_redis = redisConnection->sendMsgToServer(buffer, from_app_len, from_redis, -1);
+		RDMA_LOG(INFO) << fmt::format("redis buffer {}", from_redis);
 		bool isNetworkBusy = true;
 		//cout << "from_redis: " << from_redis << endl;
 		//if network is busy and the command is get, redirect
