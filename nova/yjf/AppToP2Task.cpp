@@ -38,6 +38,7 @@ int AppToP2Task::Run()
 		string key = "";
 		string cmd = commands[2];
 		if(cmd == "COMMAND") {
+			RDMA_LOG(INFO) << fmt::format("close connection__________________________");
 			close(clientConnection->server_fd);  
 			break;
 		}
