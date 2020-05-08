@@ -22,7 +22,6 @@ int AppToP2Task::Run()
 		char from_redis[1024] = { 0 };
 		/*send back a redirect msg*/
 		
-		clientConnection->sendMsgToServer(from_redis, len_from_redis, buffer, client_socket);
 		string command(buffer);
 		string delimiter = "";
 		delimiter.push_back((char)13);
