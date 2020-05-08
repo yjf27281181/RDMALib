@@ -38,6 +38,7 @@ int AppToP2Task::Run()
 		string key = "";
 		string cmd = commands[2];
 		if(cmd == "COMMAND") {
+			close(clientConnection->server_fd);  
 			break;
 		}
 		if(commands.size() > 4) {
