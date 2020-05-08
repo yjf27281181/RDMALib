@@ -19,7 +19,7 @@ int AppToP2Task::Run()
 		if (from_app_len <= 0) {
 			continue;
 		}
-		
+		RDMA_LOG(INFO) << fmt::format("-------------------------received buffer: {}-------------------------", buffer);
 		char from_redis[1024] = { 0 };
 		/*send back a redirect msg*/
 		
