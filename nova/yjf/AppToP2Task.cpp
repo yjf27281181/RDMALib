@@ -19,7 +19,6 @@ int AppToP2Task::Run()
 		if (from_app_len <= 0) {
 			continue;
 		}
-		RDMA_LOG(INFO) << fmt::format("-------------------------received buffer: {}-------------------------", buffer);
 		char from_redis[1024] = { 0 };
 		/*send back a redirect msg*/
 		
@@ -28,7 +27,7 @@ int AppToP2Task::Run()
 		string delimiter = "";
 		delimiter.push_back((char)13);
 		delimiter.push_back((char)10);
-
+		RDMA_LOG(INFO) << fmt::format("-------------------------received buffer: {}-------------------------", command);
 		size_t pos = 0;
 		string token;
 		vector<std::string> commands;
@@ -38,7 +37,10 @@ int AppToP2Task::Run()
 			command.erase(0, pos + delimiter.length());
 		}
 		string cmd = commands[2];
-		string key = commands[4];
+		string key = "";
+		if(commands.size() > 4) {
+			key = comands[4];
+		}
 		if(strcmp(key.c_str(),string("#exit").c_str()) == 0) {
 			string constrcutRes = constructRedisReturn("#exit");
 			int res_len = constrcutRes.length();
