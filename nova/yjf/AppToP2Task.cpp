@@ -37,11 +37,13 @@ int AppToP2Task::Run()
 			command.erase(0, pos + delimiter.length());
 		}
 		string cmd = commands[2];
+		if(cmd == "COMMAND") {
+			continue;
+		}
 		string key = "";
 		if(commands.size() > 4) {
 			key = commands[4];
 		}
-		RDMA_LOG(INFO) << fmt::format("-------------------------line 44-------------------------");
 		if(strcmp(key.c_str(),string("#exit").c_str()) == 0) {
 			string constrcutRes = constructRedisReturn("#exit");
 			int res_len = constrcutRes.length();
