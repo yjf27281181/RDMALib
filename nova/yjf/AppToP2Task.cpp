@@ -36,11 +36,13 @@ int AppToP2Task::Run()
 			commands.push_back(token);
 			command.erase(0, pos + delimiter.length());
 		}
+		string key = "";
 		string cmd = commands[2];
+		key = commands[4];
 		if(cmd == "COMMAND") {
 			continue;
 		}
-		string key = "";
+		
 		if(commands.size() > 4) {
 			key = commands[4];
 		}
