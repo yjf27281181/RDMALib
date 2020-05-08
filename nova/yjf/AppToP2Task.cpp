@@ -39,7 +39,7 @@ int AppToP2Task::Run()
 		string cmd = commands[2];
 		string key = "";
 		if(commands.size() > 4) {
-			key = comands[4];
+			key = commands[4];
 		}
 		RDMA_LOG(INFO) << fmt::format("-------------------------line 44-------------------------");
 		if(strcmp(key.c_str(),string("#exit").c_str()) == 0) {
