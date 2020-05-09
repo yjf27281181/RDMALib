@@ -54,11 +54,11 @@ int AppToP2Task::Run()
 		}
 		int len_from_redis = redisConnection->sendMsgToServer(buffer, from_app_len, from_redis, -1);
 		RDMA_LOG(INFO) << fmt::format("redis buffer {}", from_redis);
-		bool isNetworkBusy = false;
+		bool isNetworkBusy = true;
 		//cout << "from_redis: " << from_redis << endl;
 		//if network is busy and the command is get, redirect
 		//char content[] = "testContent";
-		if (cmd == "GET" && isNetworkBusy) {
+		if ((cmd == "GET" || cmd == "HGETALL") && isNetworkBusy) {
 			string instruction = rdmaManager->writeContentToRDMA(from_redis);
 			
 			//save the content in the rdma, return address, offset, length to the p2 client.
