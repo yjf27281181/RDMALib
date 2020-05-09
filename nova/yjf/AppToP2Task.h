@@ -15,7 +15,7 @@ public:
 
 private:
 	BasicConnection* clientConnection;
-	char buffer[1024] = { 0 };
+	char buffer[1024];
 	int from_app_len;
 	int client_socket;
 	string constructRedisReturn(string str);

@@ -80,13 +80,16 @@ int BasicConnection::sendMsgToServer(char* buffer, int buffer_len ,char* buffer_
 		if (buffer_len > 0) {
 			if (socket == -1) {
 				send(server_fd, buffer, buffer_len, 0);
+				from_server_len = read(server_fd, buffer_from_server, buffer_len);
+				return from_server_len;
 			}
 			else {
 				send(socket, buffer, buffer_len, 0);
+				
 			}
 
-			from_server_len = read(server_fd, buffer_from_server, buffer_len);
-			return from_server_len;
+			// 
+			return 0;
 		}
 		
 	}
