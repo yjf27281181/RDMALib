@@ -18,7 +18,8 @@ private:
 	char buffer[1024];
 	int from_app_len;
 	int client_socket;
-	string constructRedisReturn(string str);
+	string constructStringReturn(string str);
+	string constructMapReturn(string str);
 	RDMAManager *rdmaManager;
 };
 

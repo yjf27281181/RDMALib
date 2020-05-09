@@ -62,7 +62,14 @@ int AppToP2Task::Run()
 			string instruction = rdmaManager->writeContentToRDMA(from_redis);
 			
 			//save the content in the rdma, return address, offset, length to the p2 client.
-			string redirectCmd = constructRedisReturn(instruction); //return sample
+			string redirectCmd = ""; //return sample
+			if(cmd == "GET") {
+				redirectCmd = constructStringReturn(instruction)
+			}
+
+			if(cmd == "HGETALL") {
+				redirectCmd = constructMapReturn(instruction)
+			}
 			int cmd_len = redirectCmd.length();
 			char cmd_char_arry[redirectCmd.length()]; 
   
@@ -84,10 +91,38 @@ AppToP2Task::~AppToP2Task()
 {
 }
 
-string AppToP2Task::constructRedisReturn(string str)
+string AppToP2Task::constructStringReturn(string str)
 {
 	string res = "";
 	res.push_back((char)36);
+	res.append(to_string(str.length()));
+	res.push_back((char)13); //carriage return 
+	res.push_back((char)10); //new line
+	res.append(str); 
+	res.push_back((char)13); //carriage return 
+	res.push_back((char)10); //carriage return 
+	RDMA_LOG(INFO) << fmt::format("construct instruction {}", res);
+	return res;
+}
+
+string AppToP2Task::constructMapReturn(string str)
+{
+	string redirect("redirect")
+	string res = "";
+	res.push_back((char)42);
+	res.append("2");
+	res.push_back((char)13); //carriage return 
+	res.push_back((char)10); //new line
+
+	res.push_back((char)36); //$
+	res.append(to_string(redirect.length()));
+	res.push_back((char)13); //carriage return 
+	res.push_back((char)10); //new line
+	res.append(redirect); 
+	res.push_back((char)13); //carriage return 
+	res.push_back((char)10); //carriage return 
+
+	res.push_back((char)36); //$
 	res.append(to_string(str.length()));
 	res.push_back((char)13); //carriage return 
 	res.push_back((char)10); //new line
