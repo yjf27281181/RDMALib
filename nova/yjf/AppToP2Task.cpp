@@ -41,7 +41,7 @@ int AppToP2Task::Run()
 			key = commands[4];
 		}
 		if(strcmp(key.c_str(),string("#exit").c_str()) == 0) {
-			string constrcutRes = constructRedisReturn("#exit");
+			string constrcutRes = constructStringReturn("#exit");
 			int res_len = constrcutRes.length();
 			char res_char_arry[constrcutRes.length()]; 
 
@@ -64,11 +64,11 @@ int AppToP2Task::Run()
 			//save the content in the rdma, return address, offset, length to the p2 client.
 			string redirectCmd = ""; //return sample
 			if(cmd == "GET") {
-				redirectCmd = constructStringReturn(instruction)
+				redirectCmd = constructStringReturn(instruction);
 			}
 
 			if(cmd == "HGETALL") {
-				redirectCmd = constructMapReturn(instruction)
+				redirectCmd = constructMapReturn(instruction);
 			}
 			int cmd_len = redirectCmd.length();
 			char cmd_char_arry[redirectCmd.length()]; 
@@ -107,7 +107,7 @@ string AppToP2Task::constructStringReturn(string str)
 
 string AppToP2Task::constructMapReturn(string str)
 {
-	string redirect("redirect")
+	string redirect("redirect");
 	string res = "";
 	res.push_back((char)42);
 	res.append("2");
