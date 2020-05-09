@@ -48,7 +48,7 @@ int AppToP2Task::Run()
 			for (int i = 0; i < sizeof(res_char_arry); i++) { 
 				res_char_arry[i] = constrcutRes[i]; 
 			} 
-			clientConnection->sendMsgToServer(res_char_arry, sizeof(res_char_arry), buffer, client_socket);
+			clientConnection->sendMsgToServer(res_char_arry, strlen(res_char_arry)+1, buffer, client_socket);
 			close(clientConnection->server_fd);  
             break;
 		}
@@ -73,7 +73,7 @@ int AppToP2Task::Run()
 		}
 		else {
 			RDMA_LOG(INFO) << fmt::format("from redis buffer {}", from_redis);
-			clientConnection->sendMsgToServer(from_redis, sizeof(from_redis), buffer, client_socket);
+			clientConnection->sendMsgToServer(from_redis, strlen(from_redis)+1, buffer, client_socket);
 		}
 	}
 	return 0;
