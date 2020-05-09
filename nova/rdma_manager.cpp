@@ -63,7 +63,7 @@ string RDMAManager::readContentFromRDMA(RdmaReadRequest* request) {
     // TODO how do I do sanity check?
     // TODO faster (index-based) instruction argument parsing?
 
-    assert(request->instruction.substr(0, 5) == "P2GET"); // TODO remove?
+    
     stringstream ss(request->instruction.c_str());
     string command;
     ss >> command; // TODO command gets "P2GET", how to skip this?
