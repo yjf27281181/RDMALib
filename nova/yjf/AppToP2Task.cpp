@@ -54,7 +54,7 @@ int AppToP2Task::Run()
 		}
 		int len_from_redis = redisConnection->sendMsgToServer(buffer, from_app_len, from_redis, -1);
 		RDMA_LOG(INFO) << fmt::format("redis buffer {}", from_redis);
-		bool isNetworkBusy = true;
+		bool isNetworkBusy = false;
 		//cout << "from_redis: " << from_redis << endl;
 		//if network is busy and the command is get, redirect
 		//char content[] = "testContent";
