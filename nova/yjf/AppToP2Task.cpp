@@ -73,7 +73,7 @@ int AppToP2Task::Run()
 		}
 		else {
 			RDMA_LOG(INFO) << fmt::format("from redis buffer {}", from_redis);
-			clientConnection->sendMsgToServer(from_redis, sizof(from_redis), buffer, client_socket);
+			clientConnection->sendMsgToServer(from_redis, sizeof(from_redis), buffer, client_socket);
 		}
 	}
 	return 0;
