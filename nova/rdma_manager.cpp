@@ -97,14 +97,14 @@ string RDMAManager::readContentFromRDMA(RdmaReadRequest* request) {
     return string(readbuf_);
 }
 
-string RDMAManager::writeContentToRDMA(char* content) {
+string RDMAManager::writeContentToRDMA(char* content, string cmd) {
 
 	uint32_t scid = nmm_->slabclassid(0, 200);
     char *buf = nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     memcpy(buf, content, 200);
     // finally free it
     // nmm_->FreeItem(0, buf, scid);
-    string instruction = "P2GET";
+    string instruction = cmd;
     instruction += " ";
     instruction += std::to_string(FLAGS_server_id);
     instruction += " ";

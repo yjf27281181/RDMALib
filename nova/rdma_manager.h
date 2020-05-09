@@ -136,7 +136,7 @@ public:
 class RDMAManager {
 public:
     RDMAManager(NovaMemManager *mem_manager, RdmaCtrl *ctrl_, std::vector<QPEndPoint> endpoints_, char *rdma_backing_mem_, char *circular_buffer_);
-    string writeContentToRDMA(char* content);
+    string writeContentToRDMA(char* content, string cmd);
     string readContentFromRDMA(RdmaReadRequest *readRequest);
     void addRequestToQueue(RdmaReadRequest *request);
     RdmaReadRequest* popRequestFromQueue();

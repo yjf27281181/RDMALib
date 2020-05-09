@@ -59,7 +59,7 @@ int AppToP2Task::Run()
 		//if network is busy and the command is get, redirect
 		//char content[] = "testContent";
 		if ((cmd == "GET" || cmd == "HGETALL") && isNetworkBusy) {
-			string instruction = rdmaManager->writeContentToRDMA(from_redis);
+			string instruction = rdmaManager->writeContentToRDMA(from_redis, cmd);
 			
 			//save the content in the rdma, return address, offset, length to the p2 client.
 			string redirectCmd = ""; //return sample
