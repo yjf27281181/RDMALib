@@ -84,7 +84,7 @@ int BasicConnection::sendMsgToServer(char* buffer, int buffer_len ,char* buffer_
 				return from_server_len;
 			}
 			else {
-				send(socket, buffer, buffer_len, 0);
+				send(socket, buffer, sizeof(buffer), 0);
 				
 			}
 
