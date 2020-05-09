@@ -16,7 +16,7 @@ public:
 	~P2RedirectTask();
 private:
 	BasicConnection* clientConnection;
-	char buffer[1024];
+	char buffer[2048];
 	int from_app_len;
 	int client_socket;
 	string constructRedisReturn(string str);

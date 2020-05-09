@@ -15,11 +15,11 @@ int AppToP2Task::Run()
 	redisConnection->connectToServer();
 	printf("in apptop2task run\n");
 	while (true) {
-		int from_app_len = read(client_socket, buffer, 1024);
+		int from_app_len = read(client_socket, buffer, 2048);
 		if (from_app_len <= 0) {
 			continue;
 		}
-		char from_redis[1024] = { 0 };
+		char from_redis[2048] = { 0 };
 		/*send back a redirect msg*/
 		
 		string command(buffer);

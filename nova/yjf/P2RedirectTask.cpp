@@ -15,7 +15,7 @@ int P2RedirectTask::Run()
 	printf("in p2 redirect task: %s \n", this->buffer);
 
 	while(true) {
-		int from_app_len = read(client_socket, buffer, 1024);
+		int from_app_len = read(client_socket, buffer, 2048);
 		if (from_app_len <= 0) {
 			continue;
 		}
