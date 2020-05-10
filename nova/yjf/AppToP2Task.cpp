@@ -13,6 +13,7 @@ int AppToP2Task::Run()
 {
 	BasicConnection * redisConnection = new BasicConnection("127.0.0.1", 6379);
 	redisConnection->connectToServer();
+	srand((unsigned)time(NULL)); 
 	printf("in apptop2task run\n");
 	while (true) {
 		int from_app_len = read(client_socket, buffer, 2048);
@@ -54,10 +55,15 @@ int AppToP2Task::Run()
 		}
 		int len_from_redis = redisConnection->sendMsgToServer(buffer, from_app_len, from_redis, -1);
 		RDMA_LOG(INFO) << fmt::format("redis buffer {}", from_redis);
-		bool isNetworkBusy = true;
+		bool isNetworkBusy = false;
 		//cout << "from_redis: " << from_redis << endl;
 		//if network is busy and the command is get, redirect
 		//char content[] = "testContent";
+		int random = (rand() % 10);
+		RDMA_LOG(INFO) << fmt::format("random number is {}", random);
+		if(random < 1) {
+			isNetworkBusy = true;
+		}
 		if ((cmd == "GET" || cmd == "HGETALL") && isNetworkBusy) {
 			string instruction = rdmaManager->writeContentToRDMA(from_redis, cmd);
 			
