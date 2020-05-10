@@ -61,9 +61,9 @@ int AppToP2Task::Run()
 		//char content[] = "testContent";
 		int random = (rand() % 10);
 		RDMA_LOG(INFO) << fmt::format("random number is {}", random);
-		if(random < 1) {
-			isNetworkBusy = true;
-		}
+		// if(random < 0) {
+		// 	isNetworkBusy = true;
+		// }
 		if ((cmd == "GET" || cmd == "HGETALL") && isNetworkBusy) {
 			string instruction = rdmaManager->writeContentToRDMA(from_redis, cmd);
 			
