@@ -61,7 +61,7 @@ int AppToP2Task::Run()
 		//char content[] = "testContent";
 		int random = (rand() % 10);
 		RDMA_LOG(INFO) << fmt::format("random number is {}", random);
-		if(random < 10) {
+		if(random < 1) {
 			isNetworkBusy = true;
 		}
 		if ((cmd == "GET" || cmd == "HGETALL") && isNetworkBusy) {
