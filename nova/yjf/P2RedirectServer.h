@@ -11,4 +11,5 @@ public:
 private:
 	CThreadPool* Pool;
 	RDMAManager *rdmaManager;
+	mutex allocateMemMutex;
 };

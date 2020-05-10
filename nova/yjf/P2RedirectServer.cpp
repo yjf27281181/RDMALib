@@ -16,7 +16,7 @@ int P2RedirectServer::Run()
 	while (true) {
 
 		int client_socket = clientConnection->acceptContent();
-		Pool->AddTask(new P2RedirectTask(clientConnection, client_socket, rdmaManager));
+		Pool->AddTask(new P2RedirectTask(clientConnection, client_socket, rdmaManager, &allocateMemMutex));
 	}
 	return 0;
 }
