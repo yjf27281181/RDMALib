@@ -153,6 +153,7 @@ private:
     P2MsgCallback* p2mc_;
     std::queue<RdmaReadRequest*> readRequests;
     mutex addPopMutex;
+    mutex allocateMemMutex;
     
 };
 
