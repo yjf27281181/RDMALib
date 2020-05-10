@@ -4,14 +4,13 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include <mutex>
 #include "../rdma_manager.h"
 using namespace std;
 
 class P2RedirectTask : public CTask
 {
 public:
-	P2RedirectTask(BasicConnection* clientConnection, int client_socket, RDMAManager *rdmaManager);
+	P2RedirectTask(BasicConnection* clientConnection, int client_socket, RDMAManager *rdmaManager, mutex* allocateMemMutex);
 	int Run();
 	~P2RedirectTask();
 private:
@@ -21,5 +20,6 @@ private:
 	int client_socket;
 	string constructRedisReturn(string str);
 	RDMAManager *rdmaManager;
+	mutex* allocateMemMutex;
 };
 

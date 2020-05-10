@@ -2,11 +2,12 @@
 #include "BasicConnection.h"
 
 
-P2RedirectTask::P2RedirectTask(BasicConnection* clientConnection, int client_socket, RDMAManager *rdmaManager)
+P2RedirectTask::P2RedirectTask(BasicConnection* clientConnection, int client_socket, RDMAManager *rdmaManager, mutex* allocateMemMutex)
 {
 	this->clientConnection = clientConnection;
 	this->client_socket = client_socket;
 	this->rdmaManager = rdmaManager;
+	this->allocateMemMutex = allocateMemMutex;
 }
 
 int P2RedirectTask::Run()
@@ -46,13 +47,14 @@ int P2RedirectTask::Run()
 			close(clientConnection->server_fd);  
             break;
 		}
-		uint32_t scid = rdmaManager->nmm_->slabclassid(0, 1000);
+		allocateMemMutex.lock();
+		uint32_t scid = rdmaManager->nmm_->slabclassid(0, 2048);
 	    char *writeBuffer = rdmaManager->nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
+	    allocateMemMutex.unlock();
 		RdmaReadRequest* request = new RdmaReadRequest(instruction, writeBuffer);
 		rdmaManager->addRequestToQueue(request);
 		std::unique_lock<std::mutex> lock(request->readMutex);
 		request->cv.wait(lock);
-		RDMA_LOG(INFO) << fmt::format("writeBuffer content {}", writeBuffer);
 		// string contentFromRDMA(writeBuffer);
 		// string redisReturn = constructRedisReturn(contentFromRDMA);
 		
