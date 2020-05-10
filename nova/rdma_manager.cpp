@@ -100,7 +100,7 @@ string RDMAManager::readContentFromRDMA(RdmaReadRequest* request) {
 string RDMAManager::writeContentToRDMA(char* content, string cmd) {
 
 	allocateMemMutex.lock();
-	uint32_t scid = nmm_->slabclassid(0, strlen(content));
+	uint32_t scid = nmm_->slabclassid(0, strlen(content)+100);
     char *buf = nmm_->ItemAlloc(0, scid); // allocate an item of "size=40" slab class
     memcpy(buf, content, strlen(content));
     allocateMemMutex.unlock();
