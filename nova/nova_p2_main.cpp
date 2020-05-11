@@ -46,58 +46,58 @@ DEFINE_uint64(nrdma_workers, 0,
 
 
 int main(int argc, char *argv[]) {
-    gflags::ParseCommandLineFlags(&argc, &argv, true);
-    if (FLAGS_server_id == -1) {
-        exit(0);
-    }
-    std::vector<gflags::CommandLineFlagInfo> flags;
-    gflags::GetAllFlags(&flags);
-    for (const auto &flag : flags) {
-        printf("%s=%s\n", flag.name.c_str(),
-               flag.current_value.c_str());
-    }
+    // gflags::ParseCommandLineFlags(&argc, &argv, true);
+    // if (FLAGS_server_id == -1) {
+    //     exit(0);
+    // }
+    // std::vector<gflags::CommandLineFlagInfo> flags;
+    // gflags::GetAllFlags(&flags);
+    // for (const auto &flag : flags) {
+    //     printf("%s=%s\n", flag.name.c_str(),
+    //            flag.current_value.c_str());
+    // }
 
 
-    char *rdma_backing_mem = (char *) malloc(
-            FLAGS_mem_pool_size_gb * 1024 * 1024 * 1024);
-    memset(rdma_backing_mem, 0, FLAGS_mem_pool_size_gb * 1024 * 1024 * 1024);
-    std::vector<Host> hosts = convert_hosts(FLAGS_servers);
+    // char *rdma_backing_mem = (char *) malloc(
+    //         FLAGS_mem_pool_size_gb * 1024 * 1024 * 1024);
+    // memset(rdma_backing_mem, 0, FLAGS_mem_pool_size_gb * 1024 * 1024 * 1024);
+    // std::vector<Host> hosts = convert_hosts(FLAGS_servers);
 
-    NovaConfig::config = new NovaConfig;
-    NovaConfig::config->nrdma_threads = FLAGS_nrdma_workers;
-    NovaConfig::config->my_server_id = FLAGS_server_id;
-    NovaConfig::config->servers = hosts;
-    NovaConfig::config->rdma_port = FLAGS_rdma_port;
-    NovaConfig::config->rdma_doorbell_batch_size = FLAGS_rdma_doorbell_batch_size;
-    NovaConfig::config->max_msg_size = FLAGS_rdma_max_msg_size;                 // ML: set to 1024
-    NovaConfig::config->rdma_max_num_sends = FLAGS_rdma_max_num_sends;          // ML: set to 128 in command-line execution
+    // NovaConfig::config = new NovaConfig;
+    // NovaConfig::config->nrdma_threads = FLAGS_nrdma_workers;
+    // NovaConfig::config->my_server_id = FLAGS_server_id;
+    // NovaConfig::config->servers = hosts;
+    // NovaConfig::config->rdma_port = FLAGS_rdma_port;
+    // NovaConfig::config->rdma_doorbell_batch_size = FLAGS_rdma_doorbell_batch_size;
+    // NovaConfig::config->max_msg_size = FLAGS_rdma_max_msg_size;                 // ML: set to 1024
+    // NovaConfig::config->rdma_max_num_sends = FLAGS_rdma_max_num_sends;          // ML: set to 128 in command-line execution
 
-    RdmaCtrl *ctrl = new RdmaCtrl(FLAGS_server_id, FLAGS_rdma_port);
-    std::vector<QPEndPoint> endpoints;
-    for (int i = 0; i < hosts.size(); i++) {
-        if (hosts[i].server_id == FLAGS_server_id) {
-            continue;
-        }
-        QPEndPoint endpoint = {};
-        endpoint.thread_id = 0;
-        endpoint.server_id = hosts[i].server_id;
-        endpoint.host = hosts[i];
-        endpoints.push_back(endpoint);
-    }
+    // RdmaCtrl *ctrl = new RdmaCtrl(FLAGS_server_id, FLAGS_rdma_port);
+    // std::vector<QPEndPoint> endpoints;
+    // for (int i = 0; i < hosts.size(); i++) {
+    //     if (hosts[i].server_id == FLAGS_server_id) {
+    //         continue;
+    //     }
+    //     QPEndPoint endpoint = {};
+    //     endpoint.thread_id = 0;
+    //     endpoint.server_id = hosts[i].server_id;
+    //     endpoint.host = hosts[i];
+    //     endpoints.push_back(endpoint);
+    // }
 
-    // Each QP contains nrdma_buf_unit() memory for the circular buffer.
-    // An RDMA broker uses nrdma_buf_unit() * number of servers memory for its circular buffers.
-    // Each server contains nrdma_buf_unit() * number of servers * number of rdma threads for the circular buffers.
+    // // Each QP contains nrdma_buf_unit() memory for the circular buffer.
+    // // An RDMA broker uses nrdma_buf_unit() * number of servers memory for its circular buffers.
+    // // Each server contains nrdma_buf_unit() * number of servers * number of rdma threads for the circular buffers.
 
-    // We register all memory to the RNIC.
-    // RDMA verbs can only work on the memory registered in RNIC.
-    // You may use nova mem manager to manage this memory.
-    char *user_memory = rdma_backing_mem + nrdma_buf_total();
-    uint32_t partitions = 1;
-    uint32_t slab_mb = 1;
-    NovaMemManager *mem_manager = new NovaMemManager(user_memory, partitions,
-                                                     FLAGS_mem_pool_size_gb,
-                                                     slab_mb);
+    // // We register all memory to the RNIC.
+    // // RDMA verbs can only work on the memory registered in RNIC.
+    // // You may use nova mem manager to manage this memory.
+    // char *user_memory = rdma_backing_mem + nrdma_buf_total();
+    // uint32_t partitions = 1;
+    // uint32_t slab_mb = 1;
+    // NovaMemManager *mem_manager = new NovaMemManager(user_memory, partitions,
+    //                                                  FLAGS_mem_pool_size_gb,
+    //                                                  slab_mb);
 
     // ML: look at above, a design decision is needed here. Do I instantiate
     // NovaMemManager here, or should I move it into the thread class? Thread
@@ -106,14 +106,14 @@ int main(int argc, char *argv[]) {
     // ANSWER: just pass-by-reference a NovaMemManager instance to the thread
     // class!
     // ML: this is simply a char*, and it's meaningful-ness is interpreted at ExampleRDMAThread -> initializing NovaRDMARCBroker
-    RDMAManager *rdmaManager = new RDMAManager(mem_manager, ctrl, endpoints, rdma_backing_mem, rdma_backing_mem); // with pass-by-pointer
-	std::thread t(&RDMAManager::Start, rdmaManager);
+    //RDMAManager *rdmaManager = new RDMAManager(mem_manager, ctrl, endpoints, rdma_backing_mem, rdma_backing_mem); // with pass-by-pointer
+	//std::thread t(&RDMAManager::Start, rdmaManager);
 
     //run server
     CThreadPool Pool(2);
-	CTask* appToP2Server = new AppToP2Server(rdmaManager);
+	CTask* appToP2Server = new AppToP2Server(NULL);
 	Pool.AddTask(appToP2Server);
-	CTask* p2RedirectServer = new P2RedirectServer(rdmaManager);
+	CTask* p2RedirectServer = new P2RedirectServer(NULL);
 	Pool.AddTask(p2RedirectServer);
     getchar();
     return 0;
